@@ -8,6 +8,13 @@
 #define IS_TIMEOUT 3600		/* Max idle time for connection: one hour. */
 
 /*
+ * Colors.  Feel free to diddle....
+ */
+#define FROM_COLOR 36
+#define TO_COLOR 33
+#define NO_COLOR 0
+
+/*
  * Function prototypes.
  */
 extern char *get_interface (void);
