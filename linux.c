@@ -55,7 +55,7 @@ if_open_net (int nolocal)
       fprintf (stderr, "Cannot auto-detect a default interface.  Odd, that.\n");
       exit (1);
     }
-    assert (if_setname (interface) == 0);
+    assert (if_setname (interface) == SUCCESSFUL);
   }
   if (ioctl (iface, SIOCGIFFLAGS, &ifr) < 0) {
     perror ("ioctl (SIOCGIFFLAGS)");
@@ -92,7 +92,7 @@ if_read_ip (void (*filter) (UCHAR *, int))
   for (;;) {
     if ((bytes = read (iface, buf, IF_BUFSIZ)) >= 0) {
       if (!linkhdr_len || ETHTYPE ((ETHhdr *)buf) == IPTYPE) { /* Fix me. */
-	(*filter) (&buf[linkhdr_len], bytes - linkhdr_len);
+	filter (&buf[linkhdr_len], bytes - linkhdr_len);
       }
     }
   }
@@ -108,7 +108,7 @@ if_read_ip_raw (void (*filter) (UCHAR *, int))
   for (;;) {
     if ((bytes = read (iface, buf, IF_BUFSIZ)) >= 0) {
       if (!linkhdr_len || ETHTYPE ((ETHhdr *)buf) == IPTYPE) { /* Fix me. */
-	(*filter) (buf, bytes);
+	filter (buf, bytes);
       }
     }
   }

@@ -53,7 +53,7 @@ if_open_net (int nolocal)
       fprintf (stderr, "Cannot auto-detect a default interface.  Odd, that.\n");
       exit (1);
     }
-    assert (if_setname (interface) == 0);
+    assert (if_setname (interface) == SUCCESSFUL);
   }
   if ((iface = open (NIT_DEV, O_RDONLY)) < 0) {
     perror ("open");
@@ -145,7 +145,7 @@ if_open_net (int nolocal)
  * This could probably be tightened up a little.
  */
 void
-if_read_ip (void (*filter) (UCHAR *))
+if_read_ip (void (*filter) (UCHAR *, int))
 {
   int bytes;
   struct nit_bufhdr *bufhdrp;
@@ -164,7 +164,7 @@ if_read_ip (void (*filter) (UCHAR *))
       bufp += bufhdrp->nhb_totlen;
       memcpy ((char *)aligned_buf, (char *)&pktp[linkhdr_len], /* Align! */
 	      (int)(bufhdrp->nhb_msglen - linkhdr_len));
-      (*filter) (aligned_buf);
+      filter (aligned_buf, 0);	/* Fix me! */
     }
   }
 }

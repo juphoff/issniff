@@ -49,7 +49,7 @@ if_open_net (int nolocal)
       fprintf (stderr, "Cannot auto-detect a default interface.  Odd, that.\n");
       exit (1);
     }
-    assert (if_setname (interface) == 0);
+    assert (if_setname (interface) == SUCCESSFUL);
   }
   if ((iface = pfopen (ifr.ifr_name, O_RDONLY)) < 0) {
     perror ("pfopen");
@@ -69,6 +69,7 @@ if_open_net (int nolocal)
   }
   pf.enf_Priority = 32;		/* Pick a number! */
   pf.enf_FilterLen = 0;
+  /* Offsets are hard-coded here; they won't change in the life of IPV4. */
   pf.enf_Filter[pf.enf_FilterLen++] = ENF_PUSHWORD + 11;
   pf.enf_Filter[pf.enf_FilterLen++] = ENF_PUSHLIT | ENF_AND;
   pf.enf_Filter[pf.enf_FilterLen++] = htons (0x00FF);
@@ -97,7 +98,7 @@ if_open_net (int nolocal)
  * Needs a haircut.
  */
 void
-if_read_ip (void (*filter) (UCHAR *))
+if_read_ip (void (*filter) (UCHAR *, int))
 {
   int buflen, pktlen, stamplen;
   struct enstamp *stamp;
@@ -112,7 +113,7 @@ if_read_ip (void (*filter) (UCHAR *))
       stamplen = stamp->ens_stamplen;
       memcpy ((char *)aligned_buf, (char *)&bufp[linkhdr_len + stamplen],
 	      (int)(pktlen - linkhdr_len));
-      (*filter) (aligned_buf);
+      filter (aligned_buf, 0);	/* Fix me! */
 
       if (buflen == (pktlen + stamplen)) {
 	break;
