@@ -10,19 +10,19 @@
 /*
  * Colors.  Feel free to diddle....
  */
-#define FROM_COLOR 36
-#define TO_COLOR 33
+#define FROM_COLOR 36		/* Cyan. */
+#define TO_COLOR 33		/* Yellow. */
 #define NO_COLOR 0
 
 /*
  * Function prototypes.
  */
-extern char *get_interface (void);
-extern void close_interface (int);
+extern char *if_getname (void);
+extern int if_setname (const char *);
 extern void filter (UCHAR *);
-extern void ifread (void);
-extern void open_interface (void);
-extern void set_interface (const char *);
+extern void if_close (int);
+extern void if_open (void);
+extern void if_read (void);
 
 /*
  * Misc. macros.
