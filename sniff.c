@@ -23,41 +23,37 @@ static int cache_size = 0;
 static int curr_conn = 0;
 static int hiport = 0;
 static int maxdata = IS_MAXDATA;
+static int timeout = IS_TIMEOUT; /* Eventually CL overrideable. */
+static PList *cache;
+static Ports *ports;
 
-static struct PList *find_node (PORT_T, ADDR_T, PORT_T, ADDR_T);
-static void add_data (struct PList *, const u_char *, int, PORT_T);
+static PList *find_node (PORT_T, ADDR_T, PORT_T, ADDR_T);
+static void add_data (PList *, const UCHAR *, int);
 static void add_node (PORT_T, ADDR_T, PORT_T, ADDR_T);
-static void end_node (struct PList *, PORT_T);
 static void expand_cache (void);
-static void init_cache (void);
-static void pdump (struct PList *, PORT_T);
+static void pdump (PList *, const char *);
 static void sniff (void);
-
-static void
-init_cache (void)
-{
-  cache = (struct PList *)xmalloc (sizeof (struct PList));
-  cache->next = NULL;
-}
+#ifdef DEBUG
+static void paddd (PORT_T, ADDR_T, PORT_T, ADDR_T);
+#endif
 
 static void
 expand_cache (void)
 {
   int i;
-  u_char *data_block = NULL;
-  struct PList *cp = cache;
-  void *list_block = NULL;
+  UCHAR *db = NULL, *lb = NULL;
+  PList *cp = cache;
 
   /*
    * Perhaps set the increment to be based on how many entries can fit
    * into one physical page of memory?
    */
-  list_block = xmalloc (sizeof (struct PList) * CACHE_INC);
-  data_block = (u_char *)xmalloc (sizeof (u_char) * CACHE_INC * maxdata);
+  lb = (UCHAR *)xmalloc (sizeof (PList) * CACHE_INC);
+  db = (UCHAR *)xmalloc (sizeof (UCHAR) * CACHE_INC * maxdata);
 
   for (i = 0; i < CACHE_INC; i++) {
-    cp->next = (struct PList *)(list_block + (sizeof (struct PList) * i));
-    cp->next->data = data_block + (sizeof (u_char) * i * maxdata);
+    cp->next = (PList *)(lb + sizeof (PList) * i);
+    cp->next->data = db + sizeof (UCHAR) * i * maxdata;
     cp = cp->next;
   }
   cache_max += CACHE_INC;
@@ -82,7 +78,6 @@ dump_state (int sig)
       fprintf (stderr, " %d", i);
 
   fprintf (stderr, "\n\n");
-  return;
 }
 
 int
@@ -103,8 +98,8 @@ main (int argc, char **argv)
       hiport = thisport > hiport ? thisport : hiport;
     }
     /* Yes, wasting some memory for the sake of speed. */
-    ports = (struct Ports *)xmalloc (sizeof (struct Ports) * (hiport + 1));
-    memset (ports, 0, sizeof (struct Ports) * (hiport + 1)); /* Ummm. */
+    ports = (Ports *)xmalloc (sizeof (Ports) * (hiport + 1));
+    memset (ports, 0, sizeof (Ports) * (hiport + 1));
 
     for (i = iargc; i < argc; i++)
       ++ports[atoi (argv[i])].port;
@@ -116,7 +111,9 @@ main (int argc, char **argv)
   signal (SIGINT, close_interface);
   signal (SIGQUIT, close_interface);
   signal (SIGTERM, close_interface);
-  init_cache ();
+  /* Initialize cache. */
+  cache = (PList *)xmalloc (sizeof (PList));
+  cache->next = NULL;
   expand_cache ();		/* Just so we're ready for packet #1. */
   signal (SIGHUP, dump_state);	/* Must come *after* data init's. */
   sniff ();
@@ -129,8 +126,8 @@ sniff (void)
 {
   char buf[IS_BUFSIZ + 1];
   int dport, sport;
-  ADDR_T daddr, saddr;		/* Portability problem (later).... */
-  struct PList *node = NULL;
+  PList *node = NULL;
+  ADDR_T daddr, saddr;		/* Possible portability problem later.... */
   IPhdr *iph;
   TCPhdr *tcph;
   
@@ -152,17 +149,22 @@ sniff (void)
 			      saddr = SADDR(iph)))) {
 	if (SYN(tcph)) {
 	  add_node (dport, daddr, sport, saddr);
+#ifdef DEBUG
+	  paddd (dport, daddr, sport, saddr);
+#endif
 	}
       } else {
 	++(node->pkts);
 
-	if (FINRST(tcph)) {
-	  end_node (node, dport);
+	if (FIN(tcph)) {
+	  END_NODE (node, dport, "FIN");
+	} else if (RST(tcph)) {
+	  END_NODE (node, dport, "RST");
 	} else {
 	  add_data (node,
-		    (const u_char *)(buf + sizeof (ETHhdr) + IPHLEN(iph) +
+		    (const UCHAR *)(buf + sizeof (ETHhdr) + IPHLEN(iph) +
 				     DOFF(tcph)),
-		    ntohs (IPLEN(iph)) - IPHLEN(iph) - DOFF(tcph), dport);
+		    ntohs (IPLEN(iph)) - IPHLEN(iph) - DOFF(tcph));
 	}
       }
     }
@@ -172,37 +174,16 @@ sniff (void)
  * Should be made a macro call.
  */
 static void
-end_node (struct PList *node, PORT_T dport)
-{
-  pdump (node, dport);
-
-  if (node->next)
-    node->next->prev = node->prev;
-
-  if (node->prev)
-    node->prev->next = node->next;
-  else
-    (ports + dport)->next = node->next;
-
-  node->next = cache->next;
-  cache->next = node;
-  ++cache_size;
-  --curr_conn;
-}
-    
-/*
- * Should be made a macro call.
- */
-static void
-add_data (struct PList *node, const u_char *buf, int plen, PORT_T dport)
+add_data (PList *node, const UCHAR *buf, int plen)
 {
   int tocopy;
 
   tocopy = (node->dlen + plen > maxdata) ? maxdata - node->dlen : plen;
-  memcpy ((u_char *)&node->data[node->dlen], buf, tocopy);
+  memcpy ((UCHAR *)&node->data[node->dlen], buf, tocopy);
   node->dlen += tocopy;
-  if (node->dlen == maxdata)
-    end_node (node, dport);
+  if (node->dlen == maxdata) {
+    END_NODE (node, node->dport, "MAXDATA");
+  }
 }
 
 /*
@@ -211,12 +192,11 @@ add_data (struct PList *node, const u_char *buf, int plen, PORT_T dport)
 static void
 add_node (PORT_T dport, ADDR_T daddr, PORT_T sport, ADDR_T saddr)
 {
-  struct PList *new = NULL;
+  PList *new = NULL;
 
   if (!cache->next)
     expand_cache ();
 
-  /* Gotta watch this. */
   new = cache->next;
   cache->next = cache->next->next;
   --cache_size;
@@ -225,6 +205,7 @@ add_node (PORT_T dport, ADDR_T daddr, PORT_T sport, ADDR_T saddr)
   new->prev = NULL;
   new->daddr = daddr;
   new->saddr = saddr;
+  new->dport = dport;
   new->sport = sport;
   new->pkts = 1;
   new->dlen = 0;
@@ -240,10 +221,10 @@ add_node (PORT_T dport, ADDR_T daddr, PORT_T sport, ADDR_T saddr)
   }
 }
 
-static struct PList *
+static PList *
 find_node (PORT_T dport, ADDR_T daddr, PORT_T sport, ADDR_T saddr)
 {
-  struct PList *p = (ports + dport)->next;
+  PList *p = (ports + dport)->next;
 
   while (p) {
     if ((p->sport == sport) && (p->saddr == saddr) && (p->daddr == daddr))
@@ -255,9 +236,9 @@ find_node (PORT_T dport, ADDR_T daddr, PORT_T sport, ADDR_T saddr)
 }
 
 static void
-pdump (struct PList *node, PORT_T dport)
+pdump (PList *node, const char *reason)
 {
-  u_char lastc = 0;
+  UCHAR lastc = 0;
   struct in_addr ia;
   time_t now = time (NULL);
   char *timp = ctime (&node->stime);
@@ -269,9 +250,10 @@ pdump (struct PList *node, PORT_T dport)
   ia.s_addr = SADDR(node);
   printf ("Path: %s:%d -> ", inet_ntoa (ia), node->sport);
   ia.s_addr = DADDR(node);
-  printf ("%s:%d\n", inet_ntoa (ia), dport);
+  printf ("%s:%d\n", inet_ntoa (ia), node->dport);
   printf ("Stat: %d packets, %d bytes ", node->pkts, node->dlen);
-  printf ("[%s]\n\n", node->dlen == maxdata ? "DATA LIMIT" : "FIN/RST");
+  printf ("[%s]\n\n", reason);
+/* node->dlen == maxdata ? "DATA LIMIT" : "FIN/RST"); */
 
   while (node->dlen-- > 0) {
     if (*node->data < 32) {
@@ -297,3 +279,16 @@ pdump (struct PList *node, PORT_T dport)
   }
   printf ("\n------------------------------------------------------------------------\n");
 }
+
+#ifdef DEBUG
+static void
+paddd (PORT_T dport, ADDR_T daddr, PORT_T sport, ADDR_T saddr)
+{
+  struct in_addr ia;
+
+  ia.s_addr = saddr;
+  printf ("** New connection: %s:%d -> ", inet_ntoa (ia), sport);
+  ia.s_addr = daddr;
+  printf ("%s:%d\n", inet_ntoa (ia), dport);
+}
+#endif
