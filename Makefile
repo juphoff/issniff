@@ -7,13 +7,14 @@ include .version
 
 # *DEFINE THE OS*
 OS	= linux
-#OS	= sunos		# Works.
 #OS	= osf		# Works.
+#OS	= sunos		# Works.
 
 # Set level of DEBUG.
 DEBUGS	= -DDEBUG
 
 # Optional OS-specific defines.
+DEFINES_linux	= -D_POSIX_SOURCE
 DEFINES_sunos	= -D__USE_FIXED_PROTOTYPES__
 
 # General definitions.
@@ -46,12 +47,15 @@ LDFLAGS	= -g
 
 PROG	= issniff
 MANEXT	= 8
-SRCS	= $(OS).c if.c sniff.c
+SRCS	= $(OS).c filter.c if.c shm.c sniff.c
 MANSRC	= $(PROG).man
 OBJS	= $(SRCS:.c=.o)
 MANUAL	= $(MANSRC:.man=.$(MANEXT))
 
 all:	do-all
+
+world:	distclean
+	$(MAKE)
 
 ifeq (.depend, $(wildcard .depend))
 include .depend
