@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.\" issniff.8,v 2.10 1996/05/30 17:23:50 juphoff Exp
+.\" $Id$
 .TH issniff 8 "2 June 1996" "Version @@IS_VERSION@@" "NRAO"
 .SH NAME
 issniff \- Industrial Strength SNIFFer
