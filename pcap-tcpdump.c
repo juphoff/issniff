@@ -33,6 +33,11 @@ static int iface;
 extern char if_name[];
 
 /*
+ * Local function prototypes.
+ */
+static void if_read_ip_pcap_pipe (void (*filter) (UCHAR *, int));
+
+/*
  * Signal handler.
  */
 void
@@ -54,7 +59,9 @@ if_open_pcap (int nolocal)	/* "nolocal" is meaningless here. */
 {
   struct pcap_file_header hdr;
 
-  if ((iface = open (if_name, O_RDONLY)) < 0) {
+  if (!strcmp (if_name, "-")) {
+    iface = 0;			/* stdin */
+  } else if ((iface = open (if_name, O_RDONLY)) < 0) {
     perror ("open");
     exit (errno);
   }
@@ -97,6 +104,7 @@ if_open_pcap (int nolocal)	/* "nolocal" is meaningless here. */
 
 /*
  * Read from a 'tcpdump -w' file.  Still needs some work.
+ * (Reading from stdin is a mess, for instance!)
  */
 void
 if_read_ip_pcap (void (*filter) (UCHAR *, int))
@@ -105,6 +113,10 @@ if_read_ip_pcap (void (*filter) (UCHAR *, int))
   UCHAR buf[IF_BUFSIZ];
   struct pcap_pkthdr hdr;
 
+  /* Should set if_read to point to this.... */
+  if (!iface) {
+    if_read_ip_pcap_pipe (filter);
+  }
   /* Move me! */
   linkhdr_len = 14;
 
@@ -120,9 +132,39 @@ if_read_ip_pcap (void (*filter) (UCHAR *, int))
     }
     if ((bytes = read (iface, &buf, FIXLONG (hdr.caplen))) !=
 	FIXLONG (hdr.caplen)) {
+      fprintf (stderr, "%d/%ld--", bytes, FIXLONG (hdr.caplen));
       perror ("read (packet)");
       return;
     }
+    if (ETHTYPE ((ETHhdr *)buf) == IPTYPE) {
+      filter (&buf[linkhdr_len], bytes - linkhdr_len);
+    }
+  }
+}
+
+/*
+ * Read from 'tcpdump -w -' (stdin).
+ */
+void
+if_read_ip_pcap_pipe (void (*filter) (UCHAR *, int))
+{
+  int bytes;
+  UCHAR buf[IF_BUFSIZ];
+  struct pcap_pkthdr hdr;
+
+  /* Move me! */
+  linkhdr_len = 14;
+
+  for (;;) {
+    for (bytes = 0; bytes < sizeof (struct pcap_pkthdr);
+	 bytes += read (iface, &buf[bytes],
+			sizeof (struct pcap_pkthdr) - bytes));
+
+    memcpy (&hdr, buf, sizeof (struct pcap_pkthdr));
+
+    for (bytes = 0; bytes < FIXLONG (hdr.caplen);
+	 bytes += read (iface, &buf[bytes], FIXLONG (hdr.caplen) - bytes));
+
     if (ETHTYPE ((ETHhdr *)buf) == IPTYPE) {
       filter (&buf[linkhdr_len], bytes - linkhdr_len);
     }
