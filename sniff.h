@@ -21,7 +21,7 @@ extern char *if_getname (void);
 extern int if_setname (const char *);
 extern void filter (UCHAR *);
 extern void if_close (int);
-extern void if_open (void);
+extern void if_open (int);
 extern void if_read (void);
 
 /*
