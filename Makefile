@@ -32,6 +32,7 @@ LDFLAGS	= -g
 .PHONY:	all clean distclean realclean
 
 PROG	= issniff
+MANUAL	= issniff.8
 SRCS	= $(OS).c sniff.c
 OBJS	= $(SRCS:.c=.o)
 
@@ -39,7 +40,7 @@ all:	do-all
 
 ifeq (.depend, $(wildcard .depend))
 include .depend
-do-all:	issniff
+do-all:	$(PROG) $(MANUAL)
 else
 do-all: depend
 	$(MAKE)
@@ -50,6 +51,10 @@ dep depend:
 
 $(PROG):	$(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $(OBJS)
+
+$(MANUAL):	issniff.man .version
+	$(RM) issniff.8
+	sed 's/@@IS_VERSION@@/$(IS_VERSION)/' issniff.man > issniff.8
 
 clean:
 	$(RM) $(PROG) *.o core*
