@@ -15,7 +15,7 @@ time.
 
 Expect (i.e. ignore) compiler warnings about alignment, etc., from
 OSF/1, SunOS, and Solaris.  Linux may also complain about a zero-sized
-__data array in a kernel #include file...don't worry about that either.
+arrays in various #include files...don't worry about that either.
 
 Usage as a back-end for 'tcpdump' is only supported under--and only
 compiles under--Linux at this time.
