@@ -15,7 +15,7 @@
 #include <unistd.h>
 #include <sys/dlpi.h>
 #include <sys/pfmod.h>
-#include "sol.h"
+#include "solaris.h"
 #include "sniff.h"
 #include "if.h"
 
