@@ -19,6 +19,7 @@
 #if 0
 static char of_name[NAME_MAX];
 #endif
+static int all_conns = 0;	/* New: doesn't work right yet. */
 static int cache_increment = CACHE_INC;
 static int cache_max = 0;
 static int cache_size = 0;
@@ -219,9 +220,9 @@ main (int argc, char **argv)
     int i;
 
 #if 0    
-    while ((opt = getopt (argc, argv, "F:T:c:d:i:o:t:Cnsv")) != -1) {
+    while ((opt = getopt (argc, argv, "F:T:c:d:i:o:t:Cansv")) != -1) {
 #else
-    while ((opt = getopt (argc, argv, "F:T:c:d:i:t:Cnsv")) != -1) {
+    while ((opt = getopt (argc, argv, "F:T:c:d:i:t:Cansv")) != -1) {
 #endif
       switch (opt) {
       case 'C':
@@ -234,6 +235,9 @@ main (int argc, char **argv)
       case 'T':
 	colorto = CHKOPT (TO_COLOR);
 	colorize = 1;
+	break;
+      case 'a':
+	all_conns = 1;
 	break;
       case 'c':
 	cache_increment = CHKOPT (CACHE_INC);
@@ -312,7 +316,7 @@ main (int argc, char **argv)
 }
 
 /*
- * Will probably be moved to children.
+ * Will probably be moved to children and talked to via shared memory.
  *
  * Output of two-way monitoring when not colorizing looks ugly; needs work.
  */
@@ -336,8 +340,9 @@ dump_node (const PList *node, const char *reason)
 	  ports[node->dport].twoway ? "<->" : "->");
   ia.s_addr = node->daddr;
   printf ("%s:%d\n", inet_ntoa (ia), node->dport);
-  printf ("Stat: %d/%d packets (to/from), %d bytes [%s]\n", node->pkts[pkt_to],
-	  node->pkts[pkt_from], dlen, reason);
+  printf ("Stat: %d/%d packets (to/from), %d bytes [%s]%s\n",
+	  node->pkts[pkt_to], node->pkts[pkt_from], dlen, reason,
+	  node->caught_late ? " [LATE]" : "");
   puts ("------------------------------------------------------------------------");
 
   while (dlen-- > 0) {
@@ -351,6 +356,7 @@ dump_node (const PList *node, const char *reason)
 	} else {
 	  fputs ("\n<| ", stdout);
 	  current_color = colorfrom;
+	  lastc = '\n';
 	}
       }
     } else {
@@ -362,6 +368,7 @@ dump_node (const PList *node, const char *reason)
 	} else {
 	  fputs ("\n>| ", stdout);
 	  current_color = colorto;
+	  lastc = '\n';
 	}
       }
     }
@@ -380,7 +387,7 @@ dump_node (const PList *node, const char *reason)
 	/* Can't tell which end a \n came from when colorizing. */
 	if (!squash_output || !((lastc == '\r') || (lastc == '\n'))) {
 	  if (!colorize && ports[node->dport].twoway) {
-	    fputs ("\n | ", stdout);
+	    fputs ("\n | ", stdout); /* Fix me! */
 	  } else {
 	    putchar ('\n');
 	  }
@@ -427,7 +434,7 @@ rt_filter (UCHAR *buf, int len)
 #if defined(DEBUG) || !defined(USING_BPF)
   if (IPPROT (iph) != TCPPROT) { /* Only looking at TCP/IP right now. */
 # ifdef USING_BPF
-    fprintf (stderr, "*** A non-TCP packet snuck through the filter!\n");
+    fprintf (stderr, "\a*** A non-TCP packet snuck through the filter!\n");
     ++non_tcp;
 # endif /* USING_BPF */
     return;
@@ -457,11 +464,18 @@ rt_filter (UCHAR *buf, int len)
       PList *node = find_node (dport, daddr, sport, saddr);
 
       if (!node) {
+	/* Need all_conns detect both ways! */
 	if (SYN (tcph)) {
-	  ADD_NODE (dport, daddr, sport, saddr);
+	  ADD_NODE (dport, daddr, sport, saddr, 0);
 
 	  if (verbose) {
 	    MENTION (dport, daddr, sport, saddr, "New connection");
+	  }
+	} else if (all_conns && !FINRST (tcph)) {
+	  ADD_NODE (dport, daddr, sport, saddr, 1);
+
+	  if (verbose) {
+	    MENTION (dport, daddr, sport, saddr, "Detected 'late'");
 	  }
 	}
       } else {
