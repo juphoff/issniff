@@ -3,3 +3,7 @@
 * Add output tty selection.
 
 * Other things, such as IPC and encrypted transfers.
+
+* SunOS port.
+
+* Improve signal handling.
