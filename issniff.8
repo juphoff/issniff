@@ -1,0 +1,115 @@
+.\" -*- nroff -*-
+.\" $Id$
+.TH issniff 8 "24 May 1996" "Version 0.1" "NRAO"
+.SH NAME
+issniff \- Industrial Strength SNIFFer
+.SH SYNOPSIS
+.B
+issniff
+[options]
+.B
+port
+[port ...]
+.SH DESCRIPTION
+\fBissniff\fR switches the selected network interface into "promiscuous"
+mode and monitors the network traffic visible on that interface,
+collecting data on TCP-protocol network connections bound for the
+destination port(s) selected on the command line.  At least one port
+must be specified.
+.sp
+When a new network connection to a selected port is detected (a
+\fISYN\fR packet), \fBissniff\fR starts collecting data for that
+connection.  Once the connection terminates (a \fIFIN\fR or \fIRST\fR
+packet), or times out or exceeds the maximum data collection threshold,
+the data collected during the duration of the connection is printed to
+\fIstdout\fR, together with the connection's relevant statistics: hosts
+and ports involved, time-stamps, packets, bytes, and the reason for
+data-collection termination.
+.SH OPTIONS
+.TP
+.BI -c \ cache_increment
+The number of connection entries to expand the data cache by when an
+expansion is required.  (Default is \fI16\fR.)
+.sp
+Higher values should result in an infinitesimal speed improvement, but
+will also cause \fBissniff\fR to use more memory.
+.TP
+.BI -d \ max_data
+The maximum amount of data, in bytes, to collect for a connection before
+dumping its data/statistics and discontinuing data-collection.  (Default
+is \fI4096\fR.)
+.TP
+.BI -i \ interface
+The network interface to monitor.  (Default is \fIeth0\fR.)
+.TP
+.BI -t \ timeout
+The maximum idle time, in seconds between successive packets, allowed
+for a connection before dumping its data/statistics and discontinuing
+data-collection.  (Default is \fI3600\fR, i.e. one hour.)
+.sp
+A timeout value of \fI0\fR disables the timeout feature.  This is not
+recommended usage: \fBissniff\fR could eventually malloc() all computer
+storage.
+.sp
+Due to the timeout algorithm used, some connections may not time out
+until their idle time has significantly exceeded this threshold value.
+This is not a bug.
+.TP
+.B -m
+"Manage" the cache.  (\fINot yet implemented\fR)
+.TP
+.B -s
+"Squash" output.  Consecutive carriage-returns/newlines in the data
+output will be replaced by a single newline.
+.TP
+.B -v
+Verbose mode.  Output one-line descriptions of new connections to
+\fIstderr\fR each time one is detected.
+.SH SIGNALS
+.TP
+.B USR1
+Causes \fBissniff\fR to output its current state information to
+\fIstderr\fR.
+.TP
+.B USR2
+Causes \fBissniff\fR to output a summary list of the currently-active
+network connections it is collecting data for to \fIstderr\fR.
+.TP
+.B INT
+Exit immediately, with no output.  (This will eventually be changed to
+exit with output for all of the currently-active connections.)  Turns
+off promiscuous mode.
+.TP
+.B HUP
+Exit immediately, with no output.  Turns off promiscuous mode.
+.TP
+.B QUIT
+Exit immediately, with no output.  Turns off promiscuous mode.
+.TP
+.B TERM
+Exit immediately, with no output.  Turns off promiscuous mode.
+.TP
+.B KILL
+Do \fBnot\fR send a \fISIGKILL\fR to \fBissniff\fR; doing so will leave
+the network interface it was monitoring in promiscuous mode.
+\fBissniff\fR will exit cleanly on a \fISIGINT\fR, \fISIGQUIT\fR, or a
+\fISIGTERM\fR.  (In fact, these are the only exit methods supported.)
+.SH BUGS
+None known; however, some features and options have not yet been
+implemented.
+.SH REDISTRIBUTION TERMS
+Explicit permission, in the form of a personally-addressed written
+document or electronic mail message bearing either my written or
+electronic signature, respectively, is required for legal possession
+and/or use of \fBissniff\fR.  Redistribution in any form is not
+permitted, under any circumstances, without explicit permission in one
+of the aforementioned forms.
+.sp
+United States federal agencies (e.g. law enforcement, military) may
+investigate the illegal possession and/or use of this code and/or
+documentation.
+.sp
+This code and documentation is Copyright (C) 1996, Jeffrey A. Uphoff.
+All rights reserved.
+.SH AUTHOR
+Jeffrey A. Uphoff <juphoff@nrao.edu>
