@@ -32,7 +32,6 @@
 #define SADDR(X) ((X)->ip_src.s_addr)
 #define IPHLEN(X) ((X)->ip_hl * 4)
 #define IPLEN(X) ((X)->ip_len)
-#define TCPPROT IPPROTO_TCP
 
 /*
  * TCP protocol header definitions
