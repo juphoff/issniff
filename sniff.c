@@ -21,6 +21,9 @@
 #include "sniff.h"
 #include "lists.h"
 
+/*
+ * Local variables.
+ */
 static int cache_increment = CACHE_INC;
 static int cache_max = 0;
 static int cache_size = 0;
@@ -36,10 +39,13 @@ static int verbose = 0;
 static PList *cache;
 static Ports *ports;
 
+/*
+ * Local function prototypes.
+ */
 static void dump_conns (int);
 static void dump_node (const PList *, const char *);
-static void dump_state (int);
 static void show_conns (int);
+static void show_state (int);
 static PList *find_node (PORT_T, ADDR_T, PORT_T, ADDR_T);
 
 /*
@@ -65,52 +71,7 @@ dump_conns (int sig)
   if (sig == SIGHUP) {
     return;
   }
-  close_interface (sig);
-}
-
-/*
- * Signal handler.
- */
-static void
-dump_state (int sig)
-{
-  int i;
-
-  signal (sig, dump_state);
-  fprintf (stderr, "\n\
-** Current state:\n\
-*  Interface: %s\n\
-*  Active connections: %d\n\
-*  Current cache entries: %d\n\
-*  Max cache entries: %d\n\
-*  Cache increment: %d\n\
-*  Max data size (bytes): %d\n\
-*  Idle timeout (seconds): %d\n\
-*  Squashed output: %s\n\
-*  Verbose mode: %s\n\
-*  Ted Turner mode (colorization): %s\n\
-*  Monitoring ports:",
-	   get_interface (),
-	   curr_conn,
-	   cache_size,
-	   cache_max,
-	   cache_increment,
-	   maxdata,
-	   timeout,
-	   YN (squash_output),
-	   YN (verbose),
-	   YN (colorize));
-
-  for (i = 0; i <= hiport; i++) {
-    if (ports[i].port) {
-      if (ports[i].twoway) {
-	fprintf (stderr, " +%d", i);
-      } else {
-	fprintf (stderr, " %d", i);
-      }
-    }
-  }
-  fputs ("\n\n", stderr);
+  if_close (sig);
 }
 
 /*
@@ -137,6 +98,53 @@ show_conns (int sig)
     }
   }
   fputc ('\n', stderr);
+}
+
+/*
+ * Signal handler.
+ */
+static void
+show_state (int sig)
+{
+  int i;
+
+  signal (sig, show_state);
+  fprintf (stderr, "\n\
+** Current state:\n\
+*  Version: %s\n\
+*  Interface: %s\n\
+*  Active connections: %d\n\
+*  Current cache entries: %d\n\
+*  Max cache entries: %d\n\
+*  Cache increment: %d\n\
+*  Max data size (bytes): %d\n\
+*  Idle timeout (seconds): %d\n\
+*  Squashed output: %s\n\
+*  Verbose mode: %s\n\
+*  Ted Turner mode (colorization): %s\n\
+*  Monitoring ports:",
+	   IS_VERSION,
+	   if_getname (),
+	   curr_conn,
+	   cache_size,
+	   cache_max,
+	   cache_increment,
+	   maxdata,
+	   timeout,
+	   YN (squash_output),
+	   YN (verbose),
+	   YN (colorize));
+
+  for (i = 0; i <= hiport; i++) {
+    if (ports[i].port) {
+      if (ports[i].twoway) {
+	fprintf (stderr, " +%d", i);
+      } else {
+	fprintf (stderr, " %d", i);
+      }
+    }
+  }
+  fputs ("\n\n", stderr);
 }
 
 /*
@@ -180,15 +188,14 @@ filter (UCHAR *buf)
   enum { data_to = 0, data_from = 8 };
   IPhdr *iph = (IPhdr *)buf;
 
-  if (IPPROT(iph) != TCPPROT) { /* Only looking at TCP/IP right now. */
+  if (IPPROT (iph) != TCPPROT) { /* Only looking at TCP/IP right now. */
     return;
   } else {
-    TCPhdr *tcph = (TCPhdr *)(buf + IPHLEN(iph));
+    TCPhdr *tcph = (TCPhdr *)(buf + IPHLEN (iph));
     PORT_T dport = ntohs (DPORT (tcph)), sport = ntohs (SPORT (tcph));
 
     if (dport > hiport || !(ports + dport)->port) {
       if (sport <= hiport && (ports + sport)->twoway) {
-	/* Back filter. */
 	ADDR_T daddr = DADDR (iph), saddr = SADDR (iph);
 	PList *node = find_node (sport, saddr, dport, daddr); /* Backwards. */
 
@@ -253,7 +260,10 @@ main (int argc, char **argv)
 	maxdata = CHKOPT (IS_MAXDATA);
 	break;
       case 'i':
-	set_interface (optarg);
+	if (if_setname (optarg) == -1) {
+	  fprintf (stderr, "Invalid/unknown interface: %s\n", optarg);
+	  return 1;
+	}
 	break;
       case 's':
 	squash_output = 1;
@@ -289,9 +299,9 @@ main (int argc, char **argv)
     fputs ("Must specify some ports!\n", stderr);
     return 1;
   }
-  open_interface ();
-  signal (SIGQUIT, close_interface);
-  signal (SIGTERM, close_interface);
+  if_open ();
+  signal (SIGQUIT, if_close);
+  signal (SIGTERM, if_close);
   /* Initialize cache. */
   if (!(cache = (PList *)malloc (sizeof (PList)))) {
     perror ("malloc");
@@ -301,10 +311,10 @@ main (int argc, char **argv)
   EXPAND_CACHE;			/* Get ready for first packet. */
   signal (SIGINT, dump_conns);
   signal (SIGHUP, dump_conns);
-  signal (SIGUSR1, dump_state);
+  signal (SIGUSR1, show_state);
   signal (SIGUSR2, show_conns);
-  ifread ();			/* Main loop. */
-  close_interface (0);		/* Not reached. */
+  if_read ();			/* Main loop. */
+  if_close (0);			/* Not reached. */
   return 0;
 }
 
@@ -327,7 +337,8 @@ dump_node (const PList *node, const char *reason)
   printf ("Time: %s ", timep);
   printf ("to %s", ctime (&now)); /* Two calls to printf() for a reason! */
   ia.s_addr = node->saddr;
-  printf ("Path: %s:%d -> ", inet_ntoa (ia), node->sport);
+  printf ("Path: %s:%d %s ", inet_ntoa (ia), node->sport, 
+	  (ports + node->dport)->twoway ? "<->" : "->");
   ia.s_addr = node->daddr;
   printf ("%s:%d\n", inet_ntoa (ia), node->dport);
   printf ("Stat: %d/%d packets (to/from), %d bytes [%s]\n", node->pkts[pkt_to],
