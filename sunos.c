@@ -24,18 +24,21 @@ static int iface;
  * Signal handler.
  */
 void
-if_close (int sig)
+if_close_net (int sig)
 {
   close (iface);
   fprintf (stderr, "Interface %s shut down; signal %d.\n", ifr.ifr_name, sig);
-  exit (0);
+
+  if (sig) {
+    exit (0);
+  }
 }
 
 /*
  * nit-picky!
  */
 void
-if_open (int nolocal)
+if_open_net (int nolocal)
 {
   struct packetfilt pf;
   struct strioctl si;
@@ -142,7 +145,7 @@ if_open (int nolocal)
  * This could probably be tightened up a little.
  */
 void
-if_read (void)
+if_read_ip (void (*filter) (UCHAR *))
 {
   int bytes;
   struct nit_bufhdr *bufhdrp;
@@ -151,7 +154,7 @@ if_read (void)
 
   while ((bytes = read (iface, rawbuf, IF_BUFSIZ)) >= 0) {
     bufp = rawbuf;
-    bufstop = rawbuf + bytes;
+    bufstop = &rawbuf[bytes];
 
     /* Buffering makes this fun! */
     while (bufp < bufstop) {
@@ -159,9 +162,9 @@ if_read (void)
       bufhdrp = (struct nit_bufhdr *)pktp;
       pktp += sizeof (*bufhdrp);
       bufp += bufhdrp->nhb_totlen;
-      memcpy ((char *)aligned_buf, (char *)pktp + linkhdr_len, /* Align! */
+      memcpy ((char *)aligned_buf, (char *)&pktp[linkhdr_len], /* Align! */
 	      (int)(bufhdrp->nhb_msglen - linkhdr_len));
-      filter (aligned_buf);
+      (*filter) (aligned_buf);
     }
   }
 }

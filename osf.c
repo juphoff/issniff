@@ -24,15 +24,18 @@ extern int pfopen (char *, int);
  * Signal handler.
  */
 void
-if_close (int sig)
+if_close_net (int sig)
 {
   close (iface);
   fprintf (stderr, "Interface %s shut down; signal %d.\n", ifr.ifr_name, sig);
-  exit (0);
+
+  if (sig) {
+    exit (0);
+  }
 }
 
 void
-if_open (int nolocal)
+if_open_net (int nolocal)
 {
   int one = 1;
   struct enfilter pf;
@@ -94,7 +97,7 @@ if_open (int nolocal)
  * Needs a haircut.
  */
 void
-if_read (void)
+if_read_ip (void (*filter) (UCHAR *))
 {
   int buflen, pktlen, stamplen;
   struct enstamp *stamp;
@@ -107,9 +110,9 @@ if_read (void)
       stamp = (struct enstamp *)bufp;
       pktlen = stamp->ens_count;
       stamplen = stamp->ens_stamplen;
-      memcpy ((char *)aligned_buf, (char *)bufp + linkhdr_len + stamplen,
+      memcpy ((char *)aligned_buf, (char *)&bufp[linkhdr_len + stamplen],
 	      (int)(pktlen - linkhdr_len));
-      filter (aligned_buf);
+      (*filter) (aligned_buf);
 
       if (buflen == (pktlen + stamplen)) {
 	break;
