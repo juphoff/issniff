@@ -8,7 +8,7 @@ typedef struct PList {
   struct PList *next, *prev;
   ADDR_T daddr, saddr;
   PORT_T dport, sport;		/* dport redundant, but saves some arg passes */
-  UCHAR *data;
+  UDATA *data;
   UINT dlen, pkts;
   time_t stime, timeout;
 } PList;
@@ -27,14 +27,14 @@ typedef struct Ports {
   int i; \
   UCHAR *blk; \
   PList *cnode = cache; \
-  if (!(blk = (UCHAR *)malloc ((sizeof (PList) + sizeof (UCHAR) * maxdata) * \
+  if (!(blk = (UCHAR *)malloc ((sizeof (PList) + sizeof (UDATA) * maxdata) * \
 			       cache_increment))) { \
     perror ("malloc"); \
     exit (errno); \
   } \
-  for (i = 0; i < cache_increment; i++, blk += sizeof (UCHAR) * maxdata) { \
+  for (i = 0; i < cache_increment; i++, blk += sizeof (UDATA) * maxdata) { \
     cnode->next = (PList *)blk; \
-    cnode->next->data = (blk += sizeof (PList)); \
+    cnode->next->data = (UDATA *)(blk += sizeof (PList)); \
     cnode = cnode->next; \
   } \
   cache_max += cache_increment; \
@@ -57,10 +57,13 @@ typedef struct Ports {
   --curr_conn; \
 }
 
-#define ADD_DATA(NODE, BUF, IPH, TCPH) { \
+#define ADD_DATA(NODE, BUF, IPH, TCPH, SHIFT) { \
   int blen = ntohs (IPLEN((IPH))) - IPHLEN((IPH)) - DOFF((TCPH)); \
   int todo = ((NODE)->dlen + blen > maxdata) ? maxdata - (NODE)->dlen : blen; \
-  memcpy ((UCHAR *)&(NODE)->data[(NODE)->dlen], (BUF), todo); \
+  int i; \
+  for (i = 0; i < todo; i++) { \
+    (NODE)->data[(NODE)->dlen + i] = (UDATA)((BUF)[i] << (SHIFT)); \
+  } \
   (NODE)->dlen += todo; \
   if ((NODE)->dlen == maxdata) { \
     END_NODE ((NODE), (NODE)->dport, "MAXDATA"); \
@@ -85,6 +88,7 @@ typedef struct Ports {
   new->sport = (SPORT); \
   new->pkts = 1; \
   new->dlen = 0; \
+  memset (new->data, 0, sizeof (UDATA) * maxdata); \
   time (&new->stime); \
   new->timeout = new->stime; \
   if (!(ports + (DPORT))->next) { \
