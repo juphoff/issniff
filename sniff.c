@@ -1,25 +1,27 @@
 /* $Id$ */
 
 #include <ctype.h>
-#include <getopt.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <unistd.h>
 #include <arpa/inet.h>
-#include <netinet/in.h>
-#include "sniff.h"
 
 #ifdef __linux__
+# include <getopt.h>
 # include "linux.h"
 #endif
 
+#ifdef __sun__
+# include <unistd.h>
+# include "sunos.h"
+#endif
+
+#include "sniff.h"
 #include "lists.h"
 
 static int cache_increment = CACHE_INC;
-static int cache_management = 0;
 static int cache_max = 0;
 static int cache_size = 0;
 static int curr_conn = 0;
@@ -35,8 +37,6 @@ static void dump_conns (int);
 static void dump_node (const PList *, const char *);
 static void dump_state (int);
 static void show_conns (int);
-/* static void shrink_cache (int); */
-static void sniff (void);
 static PList *find_node (PORT_T, ADDR_T, PORT_T, ADDR_T);
 
 /*
@@ -81,7 +81,6 @@ dump_state (int sig)
 *  Current cache entries: %d\n\
 *  Max cache entries: %d\n\
 *  Cache increment: %d\n\
-*  Cache management (unsupported): %s\n\
 *  Max data size (bytes): %d\n\
 *  Idle timeout (seconds): %d\n\
 *  Squashed output: %s\n\
@@ -92,7 +91,6 @@ dump_state (int sig)
 	   cache_size,
 	   cache_max,
 	   cache_increment,
-	   YN (cache_management),
 	   maxdata,
 	   timeout,
 	   YN (squash_output),
@@ -100,7 +98,11 @@ dump_state (int sig)
 
   for (i = 0; i <= hiport; i++) {
     if (ports[i].port) {
-      fprintf (stderr, " %d", i);
+      if (ports[i].twoway) {
+	fprintf (stderr, " +%d", i);
+      } else {
+	fprintf (stderr, " %d", i);
+      }
     }
   }
   fputs ("\n\n", stderr);
@@ -131,17 +133,6 @@ show_conns (int sig)
   }
   fputc ('\n', stderr);
 }
- 
-#if 0
-/*
- * Only used when cache management requested.
- */
-static void
-shrink_cache (int tozap)
-{
-  return;
-}
-#endif
 
 /*
  * Does double duty as a node-finder and as a timeout routine.
@@ -170,38 +161,33 @@ find_node (PORT_T dport, ADDR_T daddr, PORT_T sport, ADDR_T saddr)
   return node;
 }
 
-static void
-sniff (void)
+/*
+ * Finds the packets we're interested in and does fun things with them.
+ */
+void
+filter (UCHAR *buf)
 {
-  ADDR_T daddr, saddr;
-  PORT_T dport, sport;
-  UCHAR buf[IS_BUFSIZ];
-  IPhdr *iph;
-  TCPhdr *tcph;
-  PList *node;
+  IPhdr *iph = (IPhdr *)buf;
 
-  /* Main loop. */
-  for (;;) {
-    if (read (iface, buf, IS_BUFSIZ) >= 0) {
-      /* Should probably look at ETHhhdr and pitch non-IP. */
-      iph = (IPhdr *)(buf + sizeof (ETHhdr));
+  if (IPPROT(iph) != TCPPROT) { /* Only looking at TCP right now. */
+    return;
+  } else {
+    TCPhdr *tcph = (TCPhdr *)(buf + IPHLEN(iph));
+    ADDR_T dport = ntohs (DPORT (tcph));
 
-      if (IPPROT(iph) != TCPPROT) { /* Only looking at TCP right now. */
-	continue;
-      }
-      tcph = (TCPhdr *)(buf + sizeof (ETHhdr) + IPHLEN(iph));
+    if (dport > hiport || !(ports + dport)->port) {
+      return;
+    } else {
+      PORT_T sport = ntohs (SPORT (tcph));
+      ADDR_T daddr = DADDR (iph), saddr = SADDR (iph);
+      PList *node = find_node (dport, daddr, sport, saddr);
 
-      if ((dport = ntohs (DPORT(tcph))) > hiport || !(ports + dport)->port) {
-	continue;
-      }
-      if (!(node = find_node (dport, daddr = DADDR(iph),
-			      sport = ntohs (SPORT(tcph)),
-			      saddr = SADDR(iph)))) {
+      if (!node) {
 	if (SYN(tcph)) {
 	  ADD_NODE (dport, daddr, sport, saddr);
 
 	  if (verbose) {
-	  MENTION (dport, daddr, sport, saddr, "New connection");
+	    MENTION (dport, daddr, sport, saddr, "New connection");
 	  }
 	}
       } else {
@@ -210,8 +196,7 @@ sniff (void)
 	if (FINRST(tcph)) {
 	  END_NODE (node, dport, "FIN/RST");
 	} else {
-	  ADD_DATA (node, buf + sizeof (ETHhdr) + IPHLEN(iph) + DOFF(tcph),
-		    iph, tcph);
+	  ADD_DATA (node, buf + IPHLEN(iph) + DOFF(tcph), iph, tcph);
 	}
       }
     }
@@ -223,27 +208,24 @@ main (int argc, char **argv)
 {
   if (argc > 1) {
     char opt;
-    int i, thisport;
+    int i;
     
-    while ((opt = getopt (argc, argv, "c:d:i:t:msv")) != -1) {
+    while ((opt = getopt (argc, argv, "c:d:i:t:sv")) != -1) {
       switch (opt) {
       case 'c':
-	cache_increment = atoi (optarg) ? atoi (optarg) : CACHE_INC;
+	cache_increment = CHKOPT (CACHE_INC);
 	break;
       case 'd':
-	maxdata = atoi (optarg) ? atoi (optarg) : IS_MAXDATA;
+	maxdata = CHKOPT (IS_MAXDATA);
 	break;
       case 'i':
 	set_interface (optarg);
-	break;
-      case 'm':
-	cache_management = 1;
 	break;
       case 's':
 	squash_output = 1;
 	break;
       case 't':
-	timeout = atoi (optarg) ? atoi (optarg) : IS_TIMEOUT;
+	timeout = CHKOPT (IS_TIMEOUT);
 	break;
       case 'v':
 	verbose = 1;
@@ -254,7 +236,7 @@ main (int argc, char **argv)
       }
     }
     for (i = optind; i < argc; i++) {
-      thisport = atoi (argv[i]);
+      int thisport = argv[i][0] == '+' ? atoi (&argv[i][1]) : atoi (argv[i]);
       hiport = thisport > hiport ? thisport : hiport;
     }
     /* Yes, wasting some memory for the sake of speed. */
@@ -265,7 +247,9 @@ main (int argc, char **argv)
     memset (ports, 0, sizeof (Ports) * (hiport + 1));
 
     for (i = optind; i < argc; i++) {
-      ++ports[atoi (argv[i])].port;
+      int thisport = argv[i][0] == '+' ? atoi (&argv[i][1]) : atoi (argv[i]);
+      ports[thisport].port = 1;
+      ports[thisport].twoway = argv[i][0] == '+' ? 1 : 0;
     }
   } else {
     fputs ("Must specify some ports!\n", stderr);
@@ -285,7 +269,7 @@ main (int argc, char **argv)
   signal (SIGHUP, dump_conns);
   signal (SIGUSR1, dump_state);
   signal (SIGUSR2, show_conns);
-  sniff ();			/* Main loop. */
+  ifread ();			/* Main loop. */
   close_interface (0);		/* Not reached. */
   return 0;
 }
