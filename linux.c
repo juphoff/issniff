@@ -8,34 +8,14 @@
 #include <net/if.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
-#include <linux/if_ether.h>
 #include "linux.h"
 #include "sniff.h"
+#include "if.h"
 
 /*
  * Local variables.
  */
 static int iface;
-static int linkhdr_len;
-static struct ifreq ifr;
-
-/* Linux interface type prefixes and their link-level packet header sizes. */
-static struct {
-  const char *type;
-  int hdr_len;
-} if_types[] = {
-  { "eth", sizeof (struct ethhdr) },
-  { "sl", 0 },
-  { "lo", sizeof (struct ethhdr) },
-  { "dummy", sizeof (struct ethhdr) },
-  /* Still need PPP. */
-  { NULL }
-};
-
-/*
- * Local function prototypes.
- */
-static char *if_detect (void);
 
 /*
  * Signal handler.
@@ -54,60 +34,6 @@ if_close (int sig)
   exit (0);
 }
 
-/* Consolidate. */
-char *
-if_getname (void)
-{
-  return ifr.ifr_name;
-}
-
-/* Consolidate. */
-int
-if_setname (const char *interface)
-{
-  int i = -1;
-
-  while (if_types[++i].type) {
-    if (!strncmp (if_types[i].type, interface, strlen (if_types[i].type))) {
-      linkhdr_len = if_types[i].hdr_len;
-      strncpy (ifr.ifr_name, interface, IFNAMSIZ);
-      return 0;
-    }
-  }
-  return -1;
-}
-
-/* Consolidate. */
-static char *
-if_detect (void)
-{
-  char ifb[IF_DETECT_BUFSIZ];
-  struct ifconf ifs;
-
-  ifs.ifc_len = sizeof (ifb);
-  memset (ifs.ifc_buf = (caddr_t)&ifb, 0, sizeof (ifb));
-
-  if (ioctl (iface, SIOCGIFCONF, &ifs) == -1) {
-    perror ("ioctl (SIOCGIFCONF)");
-    return NULL;
-  } else {
-    int i = -1;
-
-    while (if_types[++i].type) {
-      struct ifreq *ifrp = ifs.ifc_req;
-
-      while (*ifrp->ifr_name) {
-	if (!strncmp (if_types[i].type, ifrp->ifr_name,
-		      strlen (if_types[i].type))) {
-	  return ifrp->ifr_name;
-	}
-	++ifrp;
-      }
-    }
-    return NULL;
-  }
-}
-
 /*
  * Linux is easy.
  */
@@ -120,7 +46,7 @@ if_open (int nolocal)
     exit (errno);
   }
   if (!*ifr.ifr_name) {
-    char *interface = if_detect ();
+    char *interface = if_detect (iface);
 
     if (!interface) {
       fprintf (stderr, "Cannot auto-detect a default interface.  Odd, that.\n");

@@ -1,5 +1,6 @@
 /* $Id$ */
 
+#include <getopt.h>
 #include <netinet/ip.h>
 #include <netinet/protocols.h>
 #include <netinet/tcp.h>
@@ -8,7 +9,6 @@
  * General definitions.
  */
 #define IF_BUFSIZ 2048
-#define IF_DETECT_BUFSIZ 1024	/* Big enough for 25 interfaces + slop. */
 #define OS_NOLOCAL 0
 
 /*

@@ -7,41 +7,18 @@
 #include <stropts.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
-#include <sys/sockio.h>
 #include <sys/time.h>
 #include <net/nit_if.h>
 #include <net/nit_pf.h>
 #include <net/packetfilt.h>
 #include "sunos.h"
 #include "sniff.h"
-#include <netinet/if_ether.h>
+#include "if.h"
 
 /*
  * Local variables.
  */
 static int iface;
-static int linkhdr_len;
-static struct ifreq ifr;
-
-/* SunOS interface type prefixes and their link-level packet header sizes. */
-static struct {
-  const char *type;
-  int hdr_len;
-} if_types[] = {
-  { "le", sizeof (struct ether_header) },
-  { NULL }			/* Any others for SunOS?  Not anytime soon! */
-};
-
-/*
- * Local function prototypes.
- */
-static char *if_detect (void);
-
-/*
- * Stuff not prototyped in SunOS (that I can find).  Argh.
- */
-extern int ioctl (int, int, caddr_t);
-extern int socket (int, int, int);
 
 /*
  * Signal handler.
@@ -52,68 +29,6 @@ if_close (int sig)
   close (iface);
   fprintf (stderr, "Interface %s shut down; signal %d.\n", ifr.ifr_name, sig);
   exit (0);
-}
-
-/* Consolidate. */
-char *
-if_getname (void)
-{
-  return ifr.ifr_name;
-}
-
-/* Consolidate. */
-int
-if_setname (const char *interface)
-{
-  int i = -1;
-
-  while (if_types[++i].type) {
-    if (!strncmp (if_types[i].type, interface, strlen (if_types[i].type))) {
-      linkhdr_len = if_types[i].hdr_len;
-      strncpy (ifr.ifr_name, interface, IFNAMSIZ);
-      return 0;
-    }
-  }
-  return -1;
-}
-
-/* Consolidate. */
-static char *
-if_detect (void)
-{
-  char ifb[IF_DETECT_BUFSIZ];
-  int dummysock;		/* Just want a quickie there lass. */
-  struct ifconf ifs;
-
-  if ((dummysock = socket (AF_INET, SOCK_RAW, 0)) == -1) {
-    perror ("socket");
-    return NULL;
-  }
-  ifs.ifc_len = sizeof (ifb);
-  memset (ifs.ifc_buf = (caddr_t)&ifb, 0, sizeof (ifb));
-
-  if (ioctl (dummysock, SIOCGIFCONF, (char *)&ifs) < 0) {
-    perror ("ioctl (SIOCGIFCONF)");
-    close (dummysock);
-    return NULL;
-  } else {
-    int i = -1;
-
-    while (if_types[++i].type) {
-      struct ifreq *ifrp = ifs.ifc_req;
-
-      while (*ifrp->ifr_name) {
-	if (!strncmp (if_types[i].type, ifrp->ifr_name,
-		      strlen (if_types[i].type))) {
-	  close (dummysock);
-	  return ifrp->ifr_name;
-	}
-	++ifrp;
-      }
-    }
-    close (dummysock);
-    return NULL;
-  }
 }
 
 /*
@@ -129,7 +44,7 @@ if_open (int nolocal)
   u_long if_flags = NI_PROMISC;
 
   if (!*ifr.ifr_name) {
-    char *interface = if_detect ();
+    char *interface = if_detect (USE_TEMP_SOCK);
 
     if (!interface) {
       fprintf (stderr, "Cannot auto-detect a default interface.  Odd, that.\n");
@@ -179,11 +94,12 @@ if_open (int nolocal)
   /* Keep the high-level filtering in the kernel...we're not interested! */
   si.ic_cmd = NIOCSETF;
   pf.Pf_FilterLen = 0;
+  /* Offsets are hard-coded here; they won't change in the life of IPV4. */
   pf.Pf_Filter[pf.Pf_FilterLen++] = ENF_PUSHWORD + 11;
   pf.Pf_Filter[pf.Pf_FilterLen++] = ENF_PUSHLIT | ENF_AND;
-  pf.Pf_Filter[pf.Pf_FilterLen++] = 0x00FF; /* Proto. is u_char on lower end. */
+  pf.Pf_Filter[pf.Pf_FilterLen++] = 0x00FF; /* Proto. is u_char, lower byte. */
   pf.Pf_Filter[pf.Pf_FilterLen++] = ENF_PUSHLIT | ENF_CAND;
-  pf.Pf_Filter[pf.Pf_FilterLen++] = htons ((u_short)IPPROTO_TCP);
+  pf.Pf_Filter[pf.Pf_FilterLen++] = htons (IPPROTO_TCP); /* Yea, I know. */
   pf.Pf_Filter[pf.Pf_FilterLen++] = ENF_PUSHWORD + 6;
   pf.Pf_Filter[pf.Pf_FilterLen++] = ENF_PUSHLIT | ENF_EQ;
   pf.Pf_Filter[pf.Pf_FilterLen++] = htons (ETHERTYPE_IP);

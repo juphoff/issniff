@@ -6,26 +6,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 #include <arpa/inet.h>
-
-#ifdef __linux__
-# include <getopt.h>
-# include "linux.h"
-#endif
-
-/* Almost finished. */
-#ifdef __sun__
-# define USING_BPF
-# include <unistd.h>
-# include "sunos.h"
-#endif
-
-/* Not even started! */
-#ifdef __osf__
-# define USING_BPF
-# include "osf.h"
-#endif
-
+#include OSVER".h"
 #include "sniff.h"
 #include "lists.h"
 

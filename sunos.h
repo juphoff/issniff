@@ -15,9 +15,9 @@
  */
 #define IF_BUFSIZ NB_DFLT_CHUNK
 #define IF_BUF_TIMER 1		/* Flush /dev/nit buffer every # seconds. */
-#define IF_DETECT_BUFSIZ 1024	/* Big enough for 25 interfaces + slop. */
 #define NIT_DEV "/dev/nit"
 #define OS_NOLOCAL 1
+#define USING_BPF 1
 
 /*
  * IP protocol header definitions.
