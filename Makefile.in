@@ -1,0 +1,79 @@
+#
+# $Id$
+#
+# THIS MAKEFILE *REQUIRES* GNU MAKE!
+# ----------------------------------
+
+include .version
+
+# Set level of DEBUG.
+#DEBUGS	= -DDEBUG
+
+# OS-specific defines.
+DEFINES_linux	= -D_POSIX_SOURCE -DSUPPORT_TCPDUMP
+DEFINES_sunos	= -D__USE_FIXED_PROTOTYPES__
+DEFINES_solaris	= -D__EXTENSIONS__
+
+# General definitions.
+DEFINES	= $(DEFINES_@this_os@) -DIS_VERSION=\"$(IS_VERSION)\" -DOSVER=\"@this_os@\"
+
+# The Ted Ts'o express.  Noisy under some OS's.  Very gcc-specific.
+WFLAGS	= -ansi -pedantic -Wall -Wcast-align -Wcast-qual -Winline \
+          -Wmissing-prototypes -Wnested-externs -Wpointer-arith -Wshadow \
+          -Wstrict-prototypes -Wwrite-strings
+
+# OS-specific C compiler flags.
+CFLAGS_linux	= -fomit-frame-pointer -fno-strength-reduce
+
+# Autoconf-determined compiler definitions.
+CC	= @CC@
+CFLAGS	= @CFLAGS@ $(CFLAGS_@this_os@) $(DEBUGS) $(DEFINES) $(WFLAGS)
+
+# OS-specific feature support.
+SRCS_linux	= pcap-tcpdump.c
+
+PROG	= issniff
+MANEXT	= 8
+SRCS	= @this_os@.c filter.c if.c shm.c sniff.c $(SRCS_@this_os@)
+MANSRC	= $(PROG).man
+OBJS	= $(SRCS:.c=.o)
+MANUAL	= $(MANSRC:.man=.$(MANEXT))
+
+# Target rules start here: no user-servicable parts beyond this point.
+.PHONY:	all do-all clean distclean maintainer-clean maintainer-world
+
+all:	do-all
+
+# Bootstrap the dependencies.
+ifeq (.depend, $(wildcard .depend))
+include .depend
+do-all:	$(PROG) $(MANUAL)
+else
+do-all:	.depend
+	$(MAKE)
+endif
+
+.depend:
+	@CPP@ -M $(DEBUGS) $(DEFINES) $(SRCS) > $@
+
+$(PROG):	$(OBJS)
+	$(CC) @LDFLAGS@ -o $@ $^ @LIBS@
+
+$(MANUAL):	$(MANSRC) .version
+	$(RM) $@
+	sed 's/@@IS_VERSION@@/$(IS_VERSION)/g' $< > $@
+
+clean:
+	$(RM) $(PROG) $(MANUAL) $(OBJS)
+
+distclean:	clean
+	$(RM) .depend Makefile config.cache config.h config.log config.status core* *~ \#*
+
+# The following are development targets and are not meant for general use.
+maintainer-clean:	distclean
+	$(RM) configure
+
+maintainer-world:	maintainer-clean
+	autoconf
+	./configure
+	$(MAKE)

@@ -1,0 +1,2 @@
+/* Define if you have unistd.h. */
+#undef HAVE_UNISTD_H

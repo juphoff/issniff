@@ -1,0 +1,29 @@
+AC_INIT(Makefile.in)
+
+AC_CONFIG_AUX_DIR(./config)
+AC_CONFIG_HEADER(config.h)
+
+AC_CANONICAL_HOST
+
+AC_CHECK_PROG(GMAKE, gmake, gmake, no)
+if test $GMAKE != gmake; then
+   AC_MSG_ERROR(This program currently _requires_ gmake)
+fi
+
+AC_PROG_CC
+if test $ac_cv_prog_gcc != yes; then
+   AC_MSG_ERROR(This program currently _requires_ gcc)
+fi
+
+AC_PROG_CPP
+
+#AC_CHECK_HEADERS(unistd.h)
+
+AC_CHECK_LIB(socket,main)
+AC_CHECK_LIB(nsl,main)
+
+this_os=`echo $host_os | sed 's/[[.0-9]]*//g'`
+echo Building for $this_os
+AC_SUBST(this_os)
+
+AC_OUTPUT(Makefile)
