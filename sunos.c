@@ -145,7 +145,7 @@ if_open_net (int nolocal)
  * This could probably be tightened up a little.
  */
 void
-if_read_ip (void (*filter) (UCHAR *, int))
+if_read_ip_net (void (*filter) (UCHAR *, int))
 {
   int bytes;
   struct nit_bufhdr *bufhdrp;
@@ -164,7 +164,7 @@ if_read_ip (void (*filter) (UCHAR *, int))
       bufp += bufhdrp->nhb_totlen;
       memcpy ((char *)aligned_buf, (char *)&pktp[linkhdr_len], /* Align! */
 	      (int)(bufhdrp->nhb_msglen - linkhdr_len));
-      filter (aligned_buf, 0);	/* Fix me! */
+      filter (aligned_buf, IF_BUFSIZ); /* Fix me! */
     }
   }
 }

@@ -98,7 +98,7 @@ if_open_net (int nolocal)
  * Needs a haircut.
  */
 void
-if_read_ip (void (*filter) (UCHAR *, int))
+if_read_ip_net (void (*filter) (UCHAR *, int))
 {
   int buflen, pktlen, stamplen;
   struct enstamp *stamp;
@@ -113,7 +113,7 @@ if_read_ip (void (*filter) (UCHAR *, int))
       stamplen = stamp->ens_stamplen;
       memcpy ((char *)aligned_buf, (char *)&bufp[linkhdr_len + stamplen],
 	      (int)(pktlen - linkhdr_len));
-      filter (aligned_buf, 0);	/* Fix me! */
+      filter (aligned_buf, IF_BUFSIZ); /* Fix me! */
 
       if (buflen == (pktlen + stamplen)) {
 	break;
