@@ -72,10 +72,11 @@ dump_state (int sig)
 	   YN (squash_output),
 	   YN (verbose));
 
-  for (i = 0; i <= hiport; i++)
-    if (ports[i].port)
+  for (i = 0; i <= hiport; i++) {
+    if (ports[i].port) {
       fprintf (stderr, " %d", i);
-
+    }
+  }
   fputs ("\n\n", stderr);
 }
 
@@ -92,15 +93,16 @@ dump_conns (int sig)
   signal (SIGUSR2, dump_conns);
   fputs ("\n** Active connections:\n", stderr);
 
-  for (i = 0; i <= hiport; i++)
-    if ((node = (ports + i)->next))
+  for (i = 0; i <= hiport; i++) {
+    if ((node = (ports + i)->next)) {
       while (node) {
 	timep = ctime (&node->stime);
 	timep[strlen (timep) - 1] = 0; /* Zap newline */
 	MENTION(node->dport, node->daddr, node->sport, node->saddr, timep);
 	node = node->next;
       }
-
+    }
+  }
   fputc ('\n', stderr);
 }
 
@@ -150,16 +152,17 @@ find_node (PORT_T dport, ADDR_T daddr, PORT_T sport, ADDR_T saddr)
 
   while (node) {
     if ((node->sport == sport) && (node->saddr == saddr) &&
-	(node->daddr == daddr))
+	(node->daddr == daddr)) {
       break;
-
+    }
     /* Timeout stanza. */
     if (timeout && (now - node->timeout > timeout)) {
       PList *nnode = node->next;
       END_NODE (node, dport, "TIMEOUT");
       node = nnode;
-    } else
+    } else {
       node = node->next;
+    }
   }
   return node;
 }
@@ -174,19 +177,19 @@ sniff (void)
   TCPhdr *tcph;
   PList *node;
   
-  for (;;)
+  for (;;) {
     if (read (iface, buf, IS_BUFSIZ) >= 0) {
       /* Should probably look at ETHhhdr and pitch non-IP. */
       iph = (IPhdr *)(buf + sizeof (ETHhdr));
 
-      if (IPPROT(iph) != TCPPROT) /* Only looking at TCP right now. */
+      if (IPPROT(iph) != TCPPROT) { /* Only looking at TCP right now. */
 	continue;
-
+      }
       tcph = (TCPhdr *)(buf + sizeof (ETHhdr) + IPHLEN(iph));
 
-      if ((dport = ntohs (DPORT(tcph))) > hiport || !(ports + dport)->port)
+      if ((dport = ntohs (DPORT(tcph))) > hiport || !(ports + dport)->port) {
 	continue;
-
+      }
       if (!(node = find_node (dport, daddr = DADDR(iph),
 			      sport = ntohs (SPORT(tcph)),
 			      saddr = SADDR(iph)))) {
@@ -208,6 +211,7 @@ sniff (void)
 	}
       }
     }
+  }
 }
 
 int
@@ -256,8 +260,9 @@ main (int argc, char **argv)
     }
     memset (ports, 0, sizeof (Ports) * (hiport + 1));
 
-    for (i = optind; i < argc; i++)
+    for (i = optind; i < argc; i++) {
       ++ports[atoi (argv[i])].port;
+    }
   } else {
     fputs ("Must specify some ports!\n", stderr);
     return 1;
@@ -282,13 +287,15 @@ main (int argc, char **argv)
 }
 
 /*
- * A mess.  Will probably be moved to children.
+ * A real mess.  Will probably be moved to children.
  */
 static void
 dump_node (PList *node, const char *reason)
 {
   struct in_addr ia;
   UCHAR lastc = 0;
+  UCHAR *data = node->data;
+  UINT dlen = node->dlen;
   char *timep = ctime (&node->stime);
   time_t now = time (NULL);
 
@@ -300,34 +307,36 @@ dump_node (PList *node, const char *reason)
   printf ("Path: %s:%d -> ", inet_ntoa (ia), node->sport);
   ia.s_addr = node->daddr;
   printf ("%s:%d\n", inet_ntoa (ia), node->dport);
-  printf ("Stat: %d packets, %d bytes [%s]\n\n", node->pkts, node->dlen,
-	  reason);
+  printf ("Stat: %d packets, %d bytes [%s]\n\n", node->pkts, dlen, reason);
 
-  while (node->dlen-- > 0) {
-    if (*node->data < 32) {
-      switch (*node->data) {
+  while (dlen-- > 0) {
+    if (*data < 32) {
+      switch (*data) {
       case '\0':
-	if ((lastc == '\r') || (lastc == '\n') || (lastc =='\0'))
+	if ((lastc == '\r') || (lastc == '\n') || (lastc =='\0')) {
 	  break;
+	}
       case '\r':
       case '\n':
-	if (!squash_output || !((lastc == '\r') || (lastc == '\n')))
+	if (!squash_output || !((lastc == '\r') || (lastc == '\n'))) {
 	  putchar ('\n');
+	}
 	break;
       case '\t':
 	putchar ('\t');
 	break;
       default:
-	printf ("<^%c>", (*node->data + 64));
+	printf ("<^%c>", (*data + 64));
 	break;
       }
     } else {
-      if (isprint (*node->data))
-	putchar (*node->data);
-      else
-	printf ("<%d>", *node->data);
+      if (isprint (*data)) {
+	putchar (*data);
+      } else {
+	printf ("<%d>", *data);
+      }
     }
-    lastc = *node->data++;
+    lastc = *data++;
   }
   puts ("\n------------------------------------------------------------------------");
 }
