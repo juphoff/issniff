@@ -11,7 +11,8 @@ OS	= linux
 DEBUGS	= -DDEBUG
 
 # General definitions.
-DEFINES	= -D__USE_FIXED_PROTOTYPES__ -DIS_VERSION=\"$(IS_VERSION)\"
+DEFINES	= -D__USE_FIXED_PROTOTYPES__ -DIS_VERSION=\"$(IS_VERSION)\" \
+	  -DOSVER=\"$(OS)\"
 
 # For normal use.
 CC	= gcc
@@ -34,7 +35,7 @@ LDFLAGS	= -g
 
 PROG	= issniff
 MANEXT	= 8
-SRCS	= $(OS).c sniff.c
+SRCS	= $(OS).c if.c sniff.c
 MANSRC	= $(PROG).man
 OBJS	= $(SRCS:.c=.o)
 MANUAL	= $(MANSRC:.man=.$(MANEXT))
@@ -60,7 +61,7 @@ $(MANUAL):	$(MANSRC) .version
 	sed 's/@@IS_VERSION@@/$(IS_VERSION)/' $< > $@
 
 clean:
-	$(RM) $(PROG) $(MANUAL) *.o core*
+	$(RM) $(PROG) *.o core*
 
 realclean distclean:	clean
-	$(RM) .depend *~ \#*
+	$(RM) $(MANUAL) .depend *~ \#*
