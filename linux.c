@@ -74,12 +74,14 @@ if_open_net (int nolocal)
   fprintf (stderr, "Version %s listening on %s.\n\n", IS_VERSION, ifr.ifr_name);
 
   if (nolocal) {
-    fprintf (stderr, "Warning: locally-originating packets not monitored!\n\n");
+    fprintf (stderr, "Warning: locally-originated packets not monitored!\n\n");
   }
 }
 
 /*
  * Mainly here for portability since other OS's buffer the sniffing.
+ * (Linux will too, once I write that kernel module...just give me some
+ * time.)
  */
 void
 if_read_ip (void (*filter) (UCHAR *, int))
@@ -89,7 +91,7 @@ if_read_ip (void (*filter) (UCHAR *, int))
 
   for (;;) {
     if ((bytes = read (iface, buf, IF_BUFSIZ)) >= 0) {
-      if (ETHTYPE ((ETHhdr *)buf) == IPTYPE) {
+      if (!linkhdr_len || ETHTYPE ((ETHhdr *)buf) == IPTYPE) { /* Fix me. */
 	(*filter) (&buf[linkhdr_len], bytes - linkhdr_len);
       }
     }
@@ -105,7 +107,7 @@ if_read_ip_raw (void (*filter) (UCHAR *, int))
 
   for (;;) {
     if ((bytes = read (iface, buf, IF_BUFSIZ)) >= 0) {
-      if (ETHTYPE ((ETHhdr *)buf) == IPTYPE) {
+      if (!linkhdr_len || ETHTYPE ((ETHhdr *)buf) == IPTYPE) { /* Fix me. */
 	(*filter) (buf, bytes);
       }
     }
