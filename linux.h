@@ -27,9 +27,6 @@
 #define DOFF(X) ((X)->th_off * 4)
 #define SYN(X) ((X)->th_flags & TH_SYN)
 #define FINRST(X) ((X)->th_flags & (TH_FIN | TH_RST))
-#define FIN(X) ((X)->th_flags & TH_FIN)
-#define RST(X) ((X)->th_flags & TH_RST)
-
 #define PORT_T u_short
 
 typedef struct ethhdr ETHhdr;
