@@ -97,9 +97,9 @@ if_open (int nolocal)
   /* Offsets are hard-coded here; they won't change in the life of IPV4. */
   pf.Pf_Filter[pf.Pf_FilterLen++] = ENF_PUSHWORD + 11;
   pf.Pf_Filter[pf.Pf_FilterLen++] = ENF_PUSHLIT | ENF_AND;
-  pf.Pf_Filter[pf.Pf_FilterLen++] = 0x00FF; /* Proto. is u_char, lower byte. */
+  pf.Pf_Filter[pf.Pf_FilterLen++] = htons (0x00FF);
   pf.Pf_Filter[pf.Pf_FilterLen++] = ENF_PUSHLIT | ENF_CAND;
-  pf.Pf_Filter[pf.Pf_FilterLen++] = htons (IPPROTO_TCP); /* Yea, I know. */
+  pf.Pf_Filter[pf.Pf_FilterLen++] = htons (IPPROTO_TCP);
   pf.Pf_Filter[pf.Pf_FilterLen++] = ENF_PUSHWORD + 6;
   pf.Pf_Filter[pf.Pf_FilterLen++] = ENF_PUSHLIT | ENF_EQ;
   pf.Pf_Filter[pf.Pf_FilterLen++] = htons (ETHERTYPE_IP);
@@ -133,7 +133,7 @@ if_open (int nolocal)
     perror ("ioctl (I_FLUSH)");
     exit (errno);
   }
-  fprintf (stderr, "Listening on %s.\n", ifr.ifr_name);
+  fprintf (stderr, "Version %s listening on %s.\n\n", IS_VERSION, ifr.ifr_name);
   /* I want an option for local stuff, but I don't know how to do it yet! */
   fprintf (stderr, "Warning: locally-originating packets not monitored!\n\n");
 }
