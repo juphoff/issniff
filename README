@@ -1,3 +1,8 @@
+Things are *messy* right now; I'm in the midst of yet another code
+reorganization in preparation to adding shared memory and "real-time"
+output.
+
+
 Basic:
 
 Allow catching connections "late" meaning that the SYN packet(s) were
