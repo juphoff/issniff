@@ -2,12 +2,41 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include "sniff.h"
 #include "linux.h"
 
 static struct ifreq ifr;
+
+/*
+ * Signal handler.
+ */
+void
+close_interface (int sig)
+{
+  ifr.ifr_flags &= ~IFF_PROMISC;
+
+  if (ioctl (iface, SIOCSIFFLAGS, &ifr) == -1) {
+    perror ("ioctl (SIOCSIFFLAGS)");
+    exit (errno);
+  }
+  fprintf (stderr, "Interface %s shut down.\n", ifr.ifr_name);
+  exit (0);
+}
+
+char *
+get_interface (void)
+{
+  return ifr.ifr_name;
+}
+
+void
+set_interface (const char *interface)
+{
+  strncpy (ifr.ifr_name, interface, IFNAMSIZ);
+}
 
 void
 open_interface (void)
@@ -16,7 +45,8 @@ open_interface (void)
     perror ("socket");
     exit (errno);
   }
-  strcpy (ifr.ifr_name, DEFAULT_INTERFACE);
+  if (!*ifr.ifr_name)
+    set_interface (DEFAULT_INTERFACE);
 
   if (ioctl (iface, SIOCGIFFLAGS, &ifr) == -1) {
     perror ("ioctl (SIOCGIFFLAGS)");
@@ -28,18 +58,5 @@ open_interface (void)
     perror ("ioctl (SIOCSIFFLAGS)");
     exit (errno);
   }
-  fprintf (stderr, "Listening on %s.\n\n", DEFAULT_INTERFACE);
-}
-
-void
-close_interface (int sig)
-{
-  ifr.ifr_flags &= ~IFF_PROMISC;
-
-  if (ioctl (iface, SIOCSIFFLAGS, &ifr) == -1) {
-    perror ("ioctl (SIOCSIFFLAGS)");
-    exit (errno);
-  }
-  fprintf (stderr, "Interface %s shut down.\n", DEFAULT_INTERFACE);
-  exit (0);
+  fprintf (stderr, "Listening on %s.\n\n", ifr.ifr_name);
 }
