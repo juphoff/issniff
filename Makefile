@@ -13,8 +13,8 @@ OS	= linux
 # Set level of DEBUG.
 DEBUGS	= -DDEBUG
 
-# Optional OS-specific defines.
-DEFINES_linux	= -D_POSIX_SOURCE
+# OS-specific defines.
+DEFINES_linux	= -D_POSIX_SOURCE -DSUPPORT_TCPDUMP
 DEFINES_sunos	= -D__USE_FIXED_PROTOTYPES__
 
 # General definitions.
@@ -32,7 +32,7 @@ WFLAGS	= -ansi -pedantic -Wall -Wcast-align -Wcast-qual -Winline \
 	  -Wmissing-prototypes -Wnested-externs -Wpointer-arith -Wshadow \
 	  -Wstrict-prototypes -Wwrite-strings 
 
-# Optional OS-specific flags.
+# OS-specific C compiler flags.
 CFLAGS_linux	= -fomit-frame-pointer -fno-strength-reduce
 
 # For normal use.
@@ -43,11 +43,14 @@ CFLAGS_linux	= -fomit-frame-pointer -fno-strength-reduce
 CFLAGS	= -g -O6 $(CFLAGS_$(OS)) $(DEBUGS) $(DEFINES) $(WFLAGS)
 LDFLAGS	= -g
 
-.PHONY:	all clean distclean realclean
+# .PHONY:	all clean do-all distclean realclean world
+
+# OS-specific feature support.
+SRCS_linux	= pcap-tcpdump.c
 
 PROG	= issniff
 MANEXT	= 8
-SRCS	= $(OS).c filter.c if.c shm.c sniff.c
+SRCS	= $(OS).c filter.c if.c shm.c sniff.c $(SRCS_$(OS))
 MANSRC	= $(PROG).man
 OBJS	= $(SRCS:.c=.o)
 MANUAL	= $(MANSRC:.man=.$(MANEXT))
