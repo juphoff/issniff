@@ -49,13 +49,19 @@ dump_conns (int sig)
   int i;
   PList *node;
 
+  if (sig == SIGHUP) {
+    signal (SIGHUP, dump_conns);
+  }
   for (i = 0; i <= hiport; i++) {
     if ((node = (ports + i)->next)) {
       while (node) {
-	dump_node (node, "SIGINT");
+	dump_node (node, "SIGNAL");
 	node = node->next;
       }
     }
+  }
+  if (sig == SIGHUP) {
+    return;
   }
   close_interface (sig);
 }
@@ -296,7 +302,6 @@ main (int argc, char **argv)
     return 1;
   }
   open_interface ();
-  signal (SIGHUP, close_interface);
   signal (SIGQUIT, close_interface);
   signal (SIGTERM, close_interface);
   /* Initialize cache. */
@@ -307,6 +312,7 @@ main (int argc, char **argv)
   cache->next = NULL;
   expand_cache ();		/* Get ready for first packet. */
   signal (SIGINT, dump_conns);
+  signal (SIGHUP, dump_conns);
   signal (SIGUSR1, dump_state);
   signal (SIGUSR2, show_conns);
   sniff ();			/* Main loop. */
@@ -315,7 +321,7 @@ main (int argc, char **argv)
 }
 
 /*
- * A real mess.  Will probably be moved to children.
+ * Will probably be moved to children.
  */
 static void
 dump_node (const PList *node, const char *reason)
@@ -338,9 +344,12 @@ dump_node (const PList *node, const char *reason)
   printf ("Stat: %d packets, %d bytes [%s]\n", node->pkts, dlen, reason);
   puts ("------------------------------------------------------------------------");
 
-  /* Clean this up. */
   while (dlen-- > 0) {
-    if (*data < 32) {
+    if (*data >= 127) {
+      printf ("<%d>", *data);
+    } else if (*data >= 32) {
+      putchar (*data);
+    } else {
       switch (*data) {
       case '\0':
 	if ((lastc == '\r') || (lastc == '\n') || (lastc =='\0')) {
@@ -358,12 +367,6 @@ dump_node (const PList *node, const char *reason)
       default:
 	printf ("<^%c>", (*data + 64));
 	break;
-      }
-    } else {
-      if (isprint (*data)) {
-	putchar (*data);
-      } else {
-	printf ("<%d>", *data);
       }
     }
     lastc = *data++;
