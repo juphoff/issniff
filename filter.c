@@ -1,3 +1,5 @@
+/* $Id$ */
+
 #include "globals.h"
 #include "filter.h"
 
@@ -48,7 +50,7 @@ rt_filter (UCHAR *buf, int len)
 	if (node) {
 	  ++node->pkts[pkt_from];
 	  ADD_DATA (node, &buf[IPHLEN (iph) + DOFF (tcph)], iph, tcph,
-		    data_from);
+		    data_from, len);
 
 	  if (FINRST (tcph)) {
 	    ++stats[s_finrst];
@@ -67,7 +69,7 @@ rt_filter (UCHAR *buf, int len)
 	    MENTION (dport, daddr, sport, saddr, "New connection");
 	  }
 	  ADD_NODE (dport, daddr, sport, saddr, with_syn,
-		    &buf[IPHLEN (iph) + DOFF (tcph)], iph, tcph, data_to);
+		    &buf[IPHLEN (iph) + DOFF (tcph)], iph, tcph, data_to, len);
 	} else if (all_conns && !FINRST (tcph)) {
 	  /*
 	   * Bug: if this is the ACK between the two FIN's for this
@@ -78,12 +80,13 @@ rt_filter (UCHAR *buf, int len)
 	    MENTION (dport, daddr, sport, saddr, "Detected 'late'");
 	  }
 	  ADD_NODE (dport, daddr, sport, saddr, without_syn,
-		    &buf[IPHLEN (iph) + DOFF (tcph)], iph, tcph, data_to);
+		    &buf[IPHLEN (iph) + DOFF (tcph)], iph, tcph, data_to, len);
 	  ++stats[s_late];
 	}
       } else {
 	++node->pkts[pkt_to];
-	ADD_DATA (node, &buf[IPHLEN (iph) + DOFF (tcph)], iph, tcph, data_to);
+	ADD_DATA (node, &buf[IPHLEN (iph) + DOFF (tcph)], iph, tcph, data_to,
+		  len);
 
 	if (FINRST (tcph)) {
 	  ++stats[s_finrst];
