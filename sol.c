@@ -1,4 +1,4 @@
-/* sunos.c,v 2.8 1996/08/15 22:51:10 juphoff Exp */
+/* $Id$ */
 
 /* THIS CODE IS CURRENTLY A *REAL* MESS! */
 
@@ -149,7 +149,7 @@ if_open_net (int nolocal)
   }
   /* Set buffering parameters. */
   {
-#if 1				/* Bufmod appears to be broken in 2.4. */
+#if 0				/* Bufmod appears to be broken in 2.4. */
     unsigned long int if_bufsiz = 0;
 #else
     unsigned long int if_bufsiz = IF_BUFSIZ;
@@ -209,6 +209,7 @@ void
 if_read_ip_net (void (*filter) (UCHAR *, int))
 {
   int bytes;
+  unsigned int tocopy;
   struct sb_hdr *bhdrp;
   UCHAR aligned_buf[IF_BUFSIZ], rawbuf[IF_BUFSIZ];
   UCHAR *bufp, *bufstop, *pktp;
@@ -222,9 +223,30 @@ if_read_ip_net (void (*filter) (UCHAR *, int))
       bhdrp = (struct sb_hdr *)bufp;
       pktp = bufp + sizeof (*bhdrp);
       bufp += bhdrp->sbh_totlen;
+
+      /* Sometimes Solaris feeds us absolute garbage in these size
+         parameters, which means that I have to guard against a SEGV
+         here.  Right now I'm just truncating the packet, but sooner or
+         later I need to try to handle it to prevent lossage. */
+      if ((bhdrp->sbh_msglen - linkhdr_len) > IF_BUFSIZ) {
+	fprintf (stderr, "\a** Possible buffer overflow\n");
+	fprintf (stderr, "   size: %d (%d - %d)\n",
+		 bhdrp->sbh_msglen - linkhdr_len, bhdrp->sbh_msglen,
+		 linkhdr_len);
+	fprintf (stderr, "   bytes: %d, sbh_totlen: %d\n",
+		 bytes, bhdrp->sbh_totlen);
+	tocopy = IF_BUFSIZ;
+      } else {
+	tocopy = (unsigned int)(bhdrp->sbh_msglen - linkhdr_len);
+      }
       memcpy ((char *)aligned_buf, (char *)&pktp[linkhdr_len], /* Align! */
-	      (unsigned int)(bhdrp->sbh_msglen - linkhdr_len));
-      filter (aligned_buf, bhdrp->sbh_msglen - linkhdr_len - 2); /* Fix me! */
+	      tocopy);
+/* 	      (unsigned int)(bhdrp->sbh_msglen - linkhdr_len)); */
+      /* This causes some real memory stomping, so I'm using the
+         simple-minded approach until I find out why. */
+      /* JAU: Why oh why did I reduce the lenght by 2?!? */
+/*       filter (aligned_buf, bhdrp->sbh_msglen - linkhdr_len - 2); */
+      filter (aligned_buf, IF_BUFSIZ); /* Fix me! */
     }
   }
 }
