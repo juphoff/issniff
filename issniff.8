@@ -1,6 +1,6 @@
 .\" -*- nroff -*-
 .\" $Id$
-.TH issniff 8 "26 May 1996" "Version 0.4" "NRAO"
+.TH issniff 8 "27 May 1996" "Version 0.5" "NRAO"
 .SH NAME
 issniff \- Industrial Strength SNIFFer
 .SH SYNOPSIS
@@ -75,12 +75,13 @@ Causes \fBissniff\fR to output its current state information to
 Causes \fBissniff\fR to output a summary list of the currently-active
 network connections it is collecting data for to \fIstderr\fR.
 .TP
+.B HUP
+Display full output for all currently-active connections, then resume
+monitoring.
+.TP
 .B INT
 Exit with full output for all currently-active connections.  Turns off
 promiscuous mode.
-.TP
-.B HUP
-Exit immediately, with no output.  Turns off promiscuous mode.
 .TP
 .B QUIT
 Exit immediately, with no output.  Turns off promiscuous mode.
