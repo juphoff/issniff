@@ -6,8 +6,9 @@
 
 include .version
 
-# Set level of DEBUG.
+# Set levels of DEBUG.
 #DEBUGS	= -DDEBUG
+#DEBUG_WFLAGS = -pedantic -Wmissing-prototypes
 
 # OS-specific defines.
 DEFINES_linux	= -DSUPPORT_TCPDUMP
@@ -18,16 +19,15 @@ DEFINES_solaris	= -D__EXTENSIONS__
 DEFINES	= $(DEFINES_@this_os@) -DIS_VERSION=\"$(IS_VERSION)\" -DOSVER=\"@this_os@\"
 
 # The Ted Ts'o express.  Noisy under some OS's.  Very gcc-specific.
-WFLAGS	= -pedantic -Wall -Wcast-align -Wcast-qual -Winline \
-	  -Wmissing-prototypes -Wnested-externs -Wpointer-arith -Wshadow \
-          -Wstrict-prototypes -Wwrite-strings
+WFLAGS	= -Wall -Wcast-align -Wcast-qual -Winline -Wnested-externs \
+          -Wpointer-arith -Wshadow -Wstrict-prototypes -Wwrite-strings
 
 # OS-specific C compiler flags.
 CFLAGS_linux	= -fomit-frame-pointer -fno-strength-reduce
 
 # Autoconf-determined compiler definitions.
 CC	= @CC@
-CFLAGS	= @CFLAGS@ $(CFLAGS_@this_os@) $(DEBUGS) $(DEFINES) $(WFLAGS)
+CFLAGS	= @CFLAGS@ $(CFLAGS_@this_os@) $(DEBUGS) $(DEFINES) $(DEBUG_WFLAGS) $(WFLAGS)
 
 # OS-specific feature support.
 SRCS_linux	= pcap-tcpdump.c
