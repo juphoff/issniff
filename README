@@ -28,3 +28,7 @@ possible.
 
 Real-time remote transfer of the sniffed data via some sort of encrypted
 network channel.
+
+Add a bpf-like module to Linux to keep at least the high-level filtering
+in the kernel and away from userland.  Already discussed this with Alan
+Cox, who likes the idea.
