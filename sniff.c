@@ -12,6 +12,7 @@
 /*
  * Global variables.
  */
+char if_name[MAXNAMLEN];	/* Remove from global list. */
 int all_conns = 0;
 int cache_increment = CACHE_INC;
 int cache_max = 0;
@@ -43,6 +44,10 @@ static int colorto = TO_COLOR;
 static int nolocal = OS_NOLOCAL;
 static int squash_output = 0;
 
+#ifdef SUPPORT_TCPDUMP
+static int file_read = 0;
+#endif
+
 /*
  * Local function prototypes.
  */
@@ -64,7 +69,7 @@ static void show_state (int);
 static void (*filter) (UCHAR *, int) = rt_filter;
 static void (*if_close) (int) = if_close_net;
 static void (*if_open) (int) = if_open_net;
-static void (*if_read) (void (*) (UCHAR *, int)) = if_read_ip;
+static void (*if_read) (void (*) (UCHAR *, int)) = if_read_ip_net;
 
 /*
  * Signal handler.
@@ -188,8 +193,7 @@ main (int argc, char **argv)
   if (argc > 1) {
     char opt;
     int i;
-
-    while ((opt = getopt (argc, argv, "F:O:T:c:d:i:o:t:Canrsv")) != -1) {
+    while ((opt = getopt (argc, argv, "F:O:T:c:d:i:o:t:w:Canrsv")) != -1) {
       switch (opt) {
       case 'C':
 	colorize = 1;
@@ -250,6 +254,21 @@ main (int argc, char **argv)
       case 'v':
 	verbose = 1;
 	break;
+#ifdef SUPPORT_TCPDUMP
+      case 'w':			/* For 'tcpdump -w' files. */
+	/* Need error checking for conflicting options, e.g. -i */
+	file_read = 1;
+	if_open = if_open_pcap;
+	if_close = if_close_pcap;
+	if_read = if_read_ip_pcap;
+	strncpy (if_name, optarg, MAXNAMLEN);
+	break;
+#else
+      case 'w':
+	fputs ("'tcpdump -w' save-files not supported under this OS.\n",
+	       stderr);
+	return 1;
+#endif	
       default:
 	fputs ("Usage: issniff [options] [+]port [[+]port ...]\n", stderr);
 	return 1;
