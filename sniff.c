@@ -24,8 +24,8 @@
 static int cache_increment = CACHE_INC;
 static int cache_max = 0;
 static int cache_size = 0;
-static int colorfrom = 36;	/* Make #define */
-static int colorto = 33;	/* Ditto. */
+static int colorfrom = FROM_COLOR;
+static int colorto = TO_COLOR;
 static int curr_conn = 0;
 static int hiport = 0;
 static int maxdata = IS_MAXDATA;
@@ -170,6 +170,9 @@ find_node (PORT_T dport, ADDR_T daddr, PORT_T sport, ADDR_T saddr)
  * Finds the packets we're interested in and does fun things with them.
  * Made more complicated by adding two-way monitoring capabilities on
  * selectable ports.
+ *
+ * Need to check FIN/RST packets from remote end (e.g. connection
+ * refused), even when not in two-way mode.
  */
 void
 filter (UCHAR *buf)
@@ -190,8 +193,13 @@ filter (UCHAR *buf)
 	PList *node = find_node (sport, saddr, dport, daddr); /* Backwards. */
 
 	if (node) {
+	  ++node->pkts[pkt_from];
 	  ADD_DATA (node, buf + IPHLEN (iph) + DOFF (tcph), iph, tcph,
 		    data_from);
+
+	  if (FINRST (tcph)) {
+	    END_NODE (node, sport, "<-FIN/RST");
+	  }
 	}
       }
     } else {
@@ -199,7 +207,7 @@ filter (UCHAR *buf)
       PList *node = find_node (dport, daddr, sport, saddr);
 
       if (!node) {
-	if (SYN(tcph)) {
+	if (SYN (tcph)) {
 	  ADD_NODE (dport, daddr, sport, saddr);
 
 	  if (verbose) {
@@ -207,12 +215,11 @@ filter (UCHAR *buf)
 	  }
 	}
       } else {
-	++node->pkts;
+	++node->pkts[pkt_to];
+	ADD_DATA (node, buf + IPHLEN (iph) + DOFF (tcph), iph, tcph, data_to);
 
-	if (FINRST(tcph)) {
-	  END_NODE (node, dport, "FIN/RST");
-	} else {
-	  ADD_DATA (node, buf + IPHLEN (iph) + DOFF (tcph), iph, tcph, data_to);
+	if (FINRST (tcph)) {
+	  END_NODE (node, dport, "FIN/RST->");
 	}
       }
     }
@@ -232,11 +239,11 @@ main (int argc, char **argv)
 	colorize = 1;
 	break;
       case 'F':
-	colorfrom = atoi (optarg);
+	colorfrom = CHKOPT (FROM_COLOR);
 	colorize = 1;
 	break;
       case 'T':
-	colorto = atoi (optarg);
+	colorto = CHKOPT (TO_COLOR);
 	colorize = 1;
 	break;
       case 'c':
@@ -307,11 +314,10 @@ main (int argc, char **argv)
 static void
 dump_node (const PList *node, const char *reason)
 {
-  enum { none, from_color, to_color };
-  int current_color = none;
+  int current_color = NO_COLOR;
   struct in_addr ia;
-  UCHAR lastc = 0;
-  UDATA *data = node->data;
+  UCHAR data, lastc = 0;
+  UDATA *datp = node->data;
   UINT dlen = node->dlen;
   char *timep = ctime (&node->stime);
   time_t now = time (NULL);
@@ -324,30 +330,31 @@ dump_node (const PList *node, const char *reason)
   printf ("Path: %s:%d -> ", inet_ntoa (ia), node->sport);
   ia.s_addr = node->daddr;
   printf ("%s:%d\n", inet_ntoa (ia), node->dport);
-  printf ("Stat: %d packets, %d bytes [%s]\n", node->pkts, dlen, reason);
+  printf ("Stat: %d/%d packets (to/from), %d bytes [%s]\n", node->pkts[pkt_to],
+	  node->pkts[pkt_from], dlen, reason);
   puts ("------------------------------------------------------------------------");
 
   while (dlen-- > 0) {
     /* Ack, can't tell which way NULL bytes came from this way. */
-    if (*data > 0x00ff) {
-      *data >>= 8;
+    if (*datp > 0x00ff) {
+      data = *datp++ >> 8;
 
-      if (colorize && current_color != from_color) {
-	printf ("%c[%dm", 0x1b, colorfrom);
-	current_color = from_color;
+      if (colorize && current_color != colorfrom) {
+	printf ("%c[%dm", 0x1b, current_color = colorfrom);
       }
     } else {
-      if (colorize && current_color != to_color) {
-	printf ("%c[%dm", 0x1b, colorto);
-	current_color = to_color;
+      data = *datp++;
+
+      if (colorize && current_color != colorto) {
+	printf ("%c[%dm", 0x1b, current_color = colorto);
       }
     }
-    if (*data >= 127) {
-      printf ("<%d>", *data);
-    } else if (*data >= 32) {
-      putchar (*data);
+    if (data >= 127) {
+      printf ("<%d>", data);
+    } else if (data >= 32) {
+      putchar (data);
     } else {
-      switch (*data) {
+      switch (data) {
       case '\0':
 	if ((lastc == '\r') || (lastc == '\n') || (lastc =='\0')) {
 	  break;
@@ -360,17 +367,17 @@ dump_node (const PList *node, const char *reason)
 	}
 	break;
       case '\t':
-	/* Add an option to print the control code for this? */
+	/* Add an option to print the control code instead of expanding it? */
 	putchar ('\t');
 	break;
       default:
-	printf ("<^%c>", (*data + 64));
+	printf ("<^%c>", (data + 64));
 	break;
       }
     }
-    lastc = *data++;
+    lastc = data;
   }
-  if (colorize && current_color != none) {
+  if (colorize && current_color != NO_COLOR) {
     printf ("%c[0m", 0x1b);
   }
   puts ("\n========================================================================");
