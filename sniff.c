@@ -1,6 +1,7 @@
 /* $Id$ */
 
 #include <ctype.h>
+#include <getopt.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,60 +19,48 @@
 
 #include "lists.h"
 
+static int cache_increment = CACHE_INC;
+static int cache_management = 0;
 static int cache_max = 0;
 static int cache_size = 0;
 static int curr_conn = 0;
 static int hiport = 0;
 static int maxdata = IS_MAXDATA;
+static int squash_output = 0;	/* Squash (compress) sequential newlines. */
 static int timeout = IS_TIMEOUT; /* Eventually CL overrideable. */
+static int verbose = 0;		/* Running commentary of new connections. */
 static PList *cache;
 static Ports *ports;
 
-static PList *find_node (PORT_T, ADDR_T, PORT_T, ADDR_T);
-static void add_data (PList *, const UCHAR *, int);
-static void add_node (PORT_T, ADDR_T, PORT_T, ADDR_T);
 static void expand_cache (void);
-static void pdump (PList *, const char *);
+static void dump_conns (int);
+static void dump_node (PList *, const char *);
+static void dump_state (int);
+static void shrink_cache (int);
 static void sniff (void);
-#ifdef DEBUG
-static void paddd (PORT_T, ADDR_T, PORT_T, ADDR_T);
-#endif
+static PList *find_node (PORT_T, ADDR_T, PORT_T, ADDR_T);
 
-static void
-expand_cache (void)
-{
-  int i;
-  UCHAR *db = NULL, *lb = NULL;
-  PList *cp = cache;
-
-  /*
-   * Perhaps set the increment to be based on how many entries can fit
-   * into one physical page of memory?
-   */
-  lb = (UCHAR *)xmalloc (sizeof (PList) * CACHE_INC);
-  db = (UCHAR *)xmalloc (sizeof (UCHAR) * CACHE_INC * maxdata);
-
-  for (i = 0; i < CACHE_INC; i++) {
-    cp->next = (PList *)(lb + sizeof (PList) * i);
-    cp->next->data = db + sizeof (UCHAR) * i * maxdata;
-    cp = cp->next;
-  }
-  cache_max += CACHE_INC;
-  cache_size += CACHE_INC;
-}
-
-/* Will grow as I find things to talk about.... */
+/*
+ * Signal handler.
+ */
 static void
 dump_state (int sig)
 {
   int i;
 
   signal (SIGHUP, dump_state);
-  fprintf (stderr, "\n* Max cache size: %d\n", cache_max);
-  fprintf (stderr, "* Current cache size: %d\n", cache_size);
-  fprintf (stderr, "* Currently gathering data on %d connections\n", curr_conn);
-  fprintf (stderr, "* Max data size: %d\n", maxdata);
-  fprintf (stderr, "* Listening on ports:");
+  fprintf (stderr, "\n* Current state:\n");
+  fprintf (stderr, "* Interface: %s\n", get_interface ());
+  fprintf (stderr, "* Max cache entries: %d\n", cache_max);
+  fprintf (stderr, "* Current cache entries: %d\n", cache_size);
+  fprintf (stderr, "* Cache increment: %d\n", cache_increment);
+  fprintf (stderr, "* Cache management (unsupported): %s\n", 
+	   cache_management ? "yes" : "no");
+  fprintf (stderr, "* Active connections: %d\n", curr_conn);
+  fprintf (stderr, "* Max data size (bytes): %d\n", maxdata);
+  fprintf (stderr, "* Idle timeout (seconds): %d\n", timeout);
+  fprintf (stderr, "* Squashed output: %s\n", squash_output ? "yes" : "no");
+  fprintf (stderr, "* Monitoring ports:");
 
   for (i = 0; i <= hiport; i++)
     if (ports[i].port)
@@ -80,56 +69,95 @@ dump_state (int sig)
   fprintf (stderr, "\n\n");
 }
 
-int
-main (int argc, char **argv)
+/*
+ * Signal handler.
+ */
+static void
+dump_conns (int sig)
 {
-  if (argc > 1) {
-    int i, iargc, thisport;
-    
-    /* Will switch to getopt() later.... */
-    if (!strcmp (argv[1], "-d")) {
-      maxdata = atoi (argv[2]);
-      iargc = 3;
-    } else
-      iargc = 1;
+  char *timep;
+  int i;
+  PList *node;
 
-    for (i = iargc; i < argc; i++) {
-      thisport = atoi (argv[i]);
-      hiport = thisport > hiport ? thisport : hiport;
-    }
-    /* Yes, wasting some memory for the sake of speed. */
-    ports = (Ports *)xmalloc (sizeof (Ports) * (hiport + 1));
-    memset (ports, 0, sizeof (Ports) * (hiport + 1));
+  signal (SIGUSR1, dump_conns);
+  fprintf (stderr, "\n* Current connections:\n");
 
-    for (i = iargc; i < argc; i++)
-      ++ports[atoi (argv[i])].port;
-  } else {
-    fprintf (stderr, "Must specify some ports!\n");
-    return 1;
+  for (i = 0; i <= hiport; i++)
+    if ((node = (ports + i)->next))
+      while (node) {
+	timep = ctime (&node->stime);
+	timep[strlen (timep) - 1] = 0; /* Zap newline */
+	MENTION(node->dport, node->daddr, node->sport, node->saddr, timep);
+	node = node->next;
+      }
+
+  fprintf (stderr, "\n");
+}
+
+static void
+expand_cache (void)
+{
+  int i;
+  UCHAR *dblock, *lblock;
+  PList *node = cache;
+
+  /* Consolidate? */
+  lblock = (UCHAR *)xmalloc (sizeof (PList) * cache_increment);
+  dblock = (UCHAR *)xmalloc (sizeof (UCHAR) * cache_increment * maxdata);
+
+  for (i = 0; i < cache_increment; i++) {
+    node->next = (PList *)(lblock + sizeof (PList) * i);
+    node->next->data = dblock + sizeof (UCHAR) * i * maxdata;
+    node = node->next;
   }
-  open_interface ();
-  signal (SIGINT, close_interface);
-  signal (SIGQUIT, close_interface);
-  signal (SIGTERM, close_interface);
-  /* Initialize cache. */
-  cache = (PList *)xmalloc (sizeof (PList));
-  cache->next = NULL;
-  expand_cache ();		/* Just so we're ready for packet #1. */
-  signal (SIGHUP, dump_state);	/* Must come *after* data init's. */
-  sniff ();
-  close_interface (0);		/* Should not be reached. */
-  return 0;
+  cache_max += cache_increment;
+  cache_size += cache_increment;
+}
+
+/*
+ * Only used when cache management requested.
+ */
+static void
+shrink_cache (int tozap)
+{
+  /* Stub. */
+  return;
+}
+
+/*
+ * Does double duty as a node-finder and as a timeout routine.
+ */
+static PList *
+find_node (PORT_T dport, ADDR_T daddr, PORT_T sport, ADDR_T saddr)
+{
+  PList *node = (ports + dport)->next;
+  time_t now = time (NULL);
+
+  while (node) {
+    if ((node->sport == sport) && (node->saddr == saddr) &&
+	(node->daddr == daddr))
+      break;
+
+    /* Timeout stanza. */
+    if (timeout && (now - node->timeout > timeout)) {
+      PList *nnode = node->next;
+      END_NODE(node, dport, "TIMEOUT");
+      node = nnode;
+    } else
+      node = node->next;
+  }
+  return node;
 }
 
 static void
 sniff (void)
 {
-  char buf[IS_BUFSIZ + 1];
-  int dport, sport;
-  PList *node = NULL;
-  ADDR_T daddr, saddr;		/* Possible portability problem later.... */
+  ADDR_T daddr, saddr;
+  PORT_T dport, sport;
+  UCHAR buf[IS_BUFSIZ];
   IPhdr *iph;
   TCPhdr *tcph;
+  PList *node;
   
   for (;;)
     if (read (iface, buf, IS_BUFSIZ) >= 0) {
@@ -148,112 +176,110 @@ sniff (void)
 			      sport = ntohs (SPORT(tcph)),
 			      saddr = SADDR(iph)))) {
 	if (SYN(tcph)) {
-	  add_node (dport, daddr, sport, saddr);
-#ifdef DEBUG
-	  paddd (dport, daddr, sport, saddr);
-#endif
+	  ADD_NODE (dport, daddr, sport, saddr);
+
+	  if (verbose) {
+	  MENTION (dport, daddr, sport, saddr, "New connection");
+	  }
 	}
       } else {
-	++(node->pkts);
+	++node->pkts;
 
-	if (FIN(tcph)) {
-	  END_NODE (node, dport, "FIN");
-	} else if (RST(tcph)) {
-	  END_NODE (node, dport, "RST");
+	if (FINRST(tcph)) {
+	  END_NODE (node, dport, "FIN/RST");
 	} else {
-	  add_data (node,
-		    (const UCHAR *)(buf + sizeof (ETHhdr) + IPHLEN(iph) +
-				     DOFF(tcph)),
-		    ntohs (IPLEN(iph)) - IPHLEN(iph) - DOFF(tcph));
+	  ADD_DATA (node, buf + sizeof (ETHhdr) + IPHLEN(iph) + DOFF(tcph),
+		    iph, tcph);
 	}
       }
     }
 }
 
-/*
- * Should be made a macro call.
- */
-static void
-add_data (PList *node, const UCHAR *buf, int plen)
+int
+main (int argc, char **argv)
 {
-  int tocopy;
+  if (argc > 1) {
+    char opt;
+    int i, thisport;
+    
+    while ((opt = getopt (argc, argv, "c:d:i:t:msv")) != -1) {
+      switch (opt) {
+      case 'c':
+	cache_increment = atoi (optarg) ? atoi (optarg) : CACHE_INC;
+	break;
+      case 'd':
+	maxdata = atoi (optarg) ? atoi (optarg) : IS_MAXDATA;
+	break;
+      case 'i':
+	set_interface (optarg);
+	break;
+      case 'm':
+	cache_management = 1;
+	break;
+      case 's':
+	squash_output = 1;
+	break;
+      case 't':
+	timeout = atoi (optarg) ? atoi (optarg) : IS_TIMEOUT;
+	break;
+      case 'v':
+	verbose = 1;
+	break;
+      default:
+	fprintf (stderr, "Usage: issniff [options] port [port...]\n");
+	return 1;
+      }
+    }
+    for (i = optind; i < argc; i++) {
+      thisport = atoi (argv[i]);
+      hiport = thisport > hiport ? thisport : hiport;
+    }
+    /* Yes, wasting some memory for the sake of speed. */
+    ports = (Ports *)xmalloc (sizeof (Ports) * (hiport + 1));
+    memset (ports, 0, sizeof (Ports) * (hiport + 1));
 
-  tocopy = (node->dlen + plen > maxdata) ? maxdata - node->dlen : plen;
-  memcpy ((UCHAR *)&node->data[node->dlen], buf, tocopy);
-  node->dlen += tocopy;
-  if (node->dlen == maxdata) {
-    END_NODE (node, node->dport, "MAXDATA");
-  }
-}
-
-/*
- * Should be made a macro call.
- */
-static void
-add_node (PORT_T dport, ADDR_T daddr, PORT_T sport, ADDR_T saddr)
-{
-  PList *new = NULL;
-
-  if (!cache->next)
-    expand_cache ();
-
-  new = cache->next;
-  cache->next = cache->next->next;
-  --cache_size;
-  ++curr_conn;
-
-  new->prev = NULL;
-  new->daddr = daddr;
-  new->saddr = saddr;
-  new->dport = dport;
-  new->sport = sport;
-  new->pkts = 1;
-  new->dlen = 0;
-  time (&(new->stime));		/* Store start time. */
-
-  if (!(ports + dport)->next) {
-    new->next = NULL;
-    (ports + dport)->next = new;
+    for (i = optind; i < argc; i++)
+      ++ports[atoi (argv[i])].port;
   } else {
-    (ports + dport)->next->prev = new;
-    new->next = (ports + dport)->next;
-    (ports + dport)->next = new;
+    fprintf (stderr, "Must specify some ports!\n");
+    return 1;
   }
+  open_interface ();
+  signal (SIGINT, close_interface);
+  signal (SIGQUIT, close_interface);
+  signal (SIGTERM, close_interface);
+  /* Initialize cache. */
+  cache = (PList *)xmalloc (sizeof (PList));
+  cache->next = NULL;
+  expand_cache ();		/* Just so we're ready for packet #1. */
+  signal (SIGHUP, dump_state);	/* Must come *after* data init's. */
+  signal (SIGUSR1, dump_conns);	/* Ditto. */
+  sniff ();			/* Main loop is here. */
+  close_interface (0);		/* Should not be reached. */
+  return 0;
 }
 
-static PList *
-find_node (PORT_T dport, ADDR_T daddr, PORT_T sport, ADDR_T saddr)
-{
-  PList *p = (ports + dport)->next;
-
-  while (p) {
-    if ((p->sport == sport) && (p->saddr == saddr) && (p->daddr == daddr))
-      break;
-
-    p = p->next;
-  }
-  return p;
-}
-
+/*
+ * A mess.  Will probably be moved to children.
+ */
 static void
-pdump (PList *node, const char *reason)
+dump_node (PList *node, const char *reason)
 {
-  UCHAR lastc = 0;
   struct in_addr ia;
+  UCHAR lastc = 0;
+  char *timep = ctime (&node->stime);
   time_t now = time (NULL);
-  char *timp = ctime (&node->stime);
 
   printf ("------------------------------------------------------------------------\n");
-  timp[strlen (timp) - 1] = 0;
-  printf ("Time: %s ", timp);
+  timep[strlen (timep) - 1] = 0; /* Zap newline. */
+  printf ("Time: %s ", timep);
   printf ("to %s", ctime (&now));
-  ia.s_addr = SADDR(node);
+  ia.s_addr = node->saddr;
   printf ("Path: %s:%d -> ", inet_ntoa (ia), node->sport);
-  ia.s_addr = DADDR(node);
+  ia.s_addr = node->daddr;
   printf ("%s:%d\n", inet_ntoa (ia), node->dport);
   printf ("Stat: %d packets, %d bytes ", node->pkts, node->dlen);
   printf ("[%s]\n\n", reason);
-/* node->dlen == maxdata ? "DATA LIMIT" : "FIN/RST"); */
 
   while (node->dlen-- > 0) {
     if (*node->data < 32) {
@@ -263,32 +289,23 @@ pdump (PList *node, const char *reason)
 	  break;
       case '\r':
       case '\n':
-	printf ("\n");
+	if (!squash_output || !((lastc == '\r') || (lastc == '\n')))
+	  printf ("\n");
+	break;
+      case '\t':
+	printf ("\t");
 	break;
       default:
-	printf ("(^%c)", (*node->data + 64));
+	printf ("<^%c>", (*node->data + 64));
 	break;
       }
     } else {
       if (isprint (*node->data))
 	printf ("%c", *node->data);
       else
-	printf ("(%d)", *node->data);
+	printf ("<%d>", *node->data);
     }
     lastc = *node->data++;
   }
   printf ("\n------------------------------------------------------------------------\n");
 }
-
-#ifdef DEBUG
-static void
-paddd (PORT_T dport, ADDR_T daddr, PORT_T sport, ADDR_T saddr)
-{
-  struct in_addr ia;
-
-  ia.s_addr = saddr;
-  printf ("** New connection: %s:%d -> ", inet_ntoa (ia), sport);
-  ia.s_addr = daddr;
-  printf ("%s:%d\n", inet_ntoa (ia), dport);
-}
-#endif
