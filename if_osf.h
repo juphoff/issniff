@@ -8,5 +8,5 @@ static struct {
   int hdr_len;
 } if_types[] = {
   { "tu", sizeof (struct ether_header) },
-  { NULL }			/* Any others for SunOS?  Not anytime soon! */
+  { NULL }			/* Any others for OSF/1?  Not anytime soon! */
 };
