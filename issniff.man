@@ -50,8 +50,10 @@ No local packets/connections.  Only packets/connections originating from
 \fBother\fR systems will be passed through to the packet-filtering
 layer, i.e. locally-originating packets/connections will be "lost."
 (Default is to pass/process all packets/connections on OS's that support
-it, currently limited to Linux; this option has no effect on other
-OS's.)
+it, currently Linux and OSF/1; this option has no effect under SunOS.)
+.sp
+Note that under OSF/1 this option will also disable the monitoring of
+\fBincoming\fR packets to the local host.
 .TP
 .B -s
 "Squash" output.  Consecutive carriage-returns/newlines in the collected
@@ -140,10 +142,12 @@ OS's.  \fBissniff\fR exits cleanly on: \fISIGINT\fR, \fISIGQUIT\fR, and
 .SH BUGS
 Slight flakiness in the signal-handling, which needs rewriting.
 .SH NOTE
-Some features and/or options have not yet been implemented, especially
-under OS's other than Linux.  \fBissniff\fR has been tested under:
+Some features and/or options have not yet been implemented.
+\fBissniff\fR has been tested under:
 .sp
 Linux: 1.2.13, 1.99.x.
+.br
+OSF/1: T3.2.  (Not yet extensive.)
 .br
 SunOS: 4.1.2.
 .SH REDISTRIBUTION TERMS
