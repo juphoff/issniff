@@ -4,11 +4,15 @@
 #
 # $Id$
 
+# *DEFINE THE OS*
+OS	= linux
+#OSNAME	= sunos		# Not done yet.
+
 # Set level of DEBUG.
 DEBUGS	= -DDEBUG
 
 # General definitions.
-DEFINES	= -D_POSIX_SOURCE
+DEFINES	= -D__USE_FIXED_PROTOTYPES__
 
 # For normal use.
 CC	= gcc
@@ -30,7 +34,7 @@ LDFLAGS	= -g
 .PHONY:	all clean distclean realclean
 
 PROG	= issniff
-SRCS	= linux.c sniff.c
+SRCS	= $(OS).c sniff.c
 OBJS	= $(SRCS:.c=.o)
 
 all:	do-all
