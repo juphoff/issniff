@@ -33,7 +33,7 @@ INDENT	= indent
 .PHONY:	all clean distclean indent realclean
 
 PROG	= issniff
-SRCS	= linux.c sniff.c memory.c
+SRCS	= linux.c sniff.c
 OBJS	= $(SRCS:.c=.o)
 
 all:	do-all
