@@ -1,8 +1,12 @@
+* Fix occasional OSF/1 "garbling."
+
 * Improve signal handling.
 
 * Add command-line address selection.
 
 * Add an rc file capability for default (no argument) usage: ~/.issniffrc
+
+* Add optionally-invoked ncurses-based front-end.
 
 * Add output tty selection.
 
