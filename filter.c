@@ -52,9 +52,12 @@ rt_filter (UCHAR *buf, int len)
 	  ADD_DATA (node, &buf[IPHLEN (iph) + DOFF (tcph)], iph, tcph,
 		    data_from, len);
 
-	  if (FINRST (tcph)) {
-	    ++stats[s_finrst];
-	    END_NODE (node, sport, "<-FIN/RST");
+	  if (FIN (tcph)) {
+	    ++stats[s_fin];
+	    END_NODE (node, sport, "<-FIN");
+	  } else if (RST (tcph)) {
+	    ++stats[s_rst];
+	    END_NODE (node, sport, "<-RST");
 	  }
 	}
       }
@@ -88,9 +91,12 @@ rt_filter (UCHAR *buf, int len)
 	ADD_DATA (node, &buf[IPHLEN (iph) + DOFF (tcph)], iph, tcph, data_to,
 		  len);
 
-	if (FINRST (tcph)) {
-	  ++stats[s_finrst];
-	  END_NODE (node, dport, "FIN/RST->");
+	if (FIN (tcph)) {
+	  ++stats[s_fin];
+	  END_NODE (node, dport, "FIN->");
+	} else if (RST (tcph)) {
+	  ++stats[s_rst];
+	  END_NODE (node, dport, "RST->");
 	}
       }
     }
