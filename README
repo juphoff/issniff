@@ -1,5 +1,6 @@
-(This file is more of a verbose TODO list than a real readme.  Check the
-man-page for usage information if you have questions.)
+(This file is more of a verbose TODO list of "blue-sky" ideas than a
+real README.  Check the man-page for usage information if you have any
+questions.)
 
 Things are *messy* right now; I'm in the midst of yet another code
 reorganization in preparation to adding shared memory and "real-time"
@@ -14,7 +15,7 @@ at runtime.  (Partially implemented.)
 
 Allow run-time selection of what addresses to monitor, and (eventual)
 optional specification of a tty for each address' data to be printed on.
-This is currently accomplished via piping from 'tcpdump'.
+The former is currently accomplished by piping from 'tcpdump'.
 
 Allow run-time selection of what destination (only) ports to monitor,
 and optional specification of a tty for each port's data to be printed
@@ -44,7 +45,9 @@ front-end for flexibility.
 Add a bpf-like module to Linux to keep at least the high-level filtering
 in the kernel and away from userland.  Already discussed this with Alan
 Cox, who likes the idea.  It will also provide buffering, which is
-sorely needed under Linux to prevent "missing" packets.
+sorely needed under Linux to prevent "missing" packets.  {Hey--is this
+here now with 2.1.x?}
 
 Real-time remote transfer of the sniffed data via some sort of encrypted
-network channel.
+network channel.  This will be my project if I'm ever hit by a car and
+laid up in bed for months.  Otherwise, don't count on it ever happening.
