@@ -32,9 +32,11 @@ LDFLAGS	= -g
 .PHONY:	all clean distclean realclean
 
 PROG	= issniff
-MANUAL	= issniff.8
+MANEXT	= 8
 SRCS	= $(OS).c sniff.c
+MANSRC	= $(PROG).man
 OBJS	= $(SRCS:.c=.o)
+MANUAL	= $(MANSRC:.man=.$(MANEXT))
 
 all:	do-all
 
@@ -50,14 +52,14 @@ dep depend:
 	$(CPP) -M $(DEBUGS) $(DEFINES) $(SRCS) > .depend
 
 $(PROG):	$(OBJS)
-	$(CC) $(LDFLAGS) -o $@ $(OBJS)
+	$(CC) $(LDFLAGS) -o $@ $^
 
-$(MANUAL):	issniff.man .version
-	$(RM) issniff.8
-	sed 's/@@IS_VERSION@@/$(IS_VERSION)/' issniff.man > issniff.8
+$(MANUAL):	$(MANSRC) .version
+	$(RM) $@
+	sed 's/@@IS_VERSION@@/$(IS_VERSION)/' $< > $@
 
 clean:
-	$(RM) $(PROG) *.o core*
+	$(RM) $(PROG) $(MANUAL) *.o core*
 
 realclean distclean:	clean
 	$(RM) .depend *~ \#*
