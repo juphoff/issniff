@@ -1,19 +1,16 @@
 .\" -*- nroff -*-
-.\" $Id$
-.TH issniff 8 "30 May 1996" "Version 0.6.2" "NRAO"
+.\" issniff.8,v 2.10 1996/05/30 17:23:50 juphoff Exp
+.TH issniff 8 "2 June 1996" "Version 0.7" "NRAO"
 .SH NAME
 issniff \- Industrial Strength SNIFFer
 .SH SYNOPSIS
 .B
 issniff
-[options]
-.B
-[+]port
-[[+]port ...]
+[options] [+]\fBport\fR [[+]port ...]
 .SH DESCRIPTION
-\fBissniff\fR switches the selected network interface into "promiscuous"
-mode and monitors the network traffic visible on that interface,
-collecting data on TCP-protocol network connections bound for the
+\fBissniff\fR switches the selected (or auto-detected) network interface
+into "promiscuous" mode and monitors the network traffic visible to that
+interface, collecting data on TCP-protocol network connections to the
 destination port(s) selected on the command line.  At least one port
 must be specified.  A '+' prefix on a port number means to monitor
 traffic in both directions on connections to that port.
@@ -24,8 +21,8 @@ connection.  Once the connection terminates (a \fIFIN\fR or \fIRST\fR
 packet), or times out or exceeds the maximum data collection threshold,
 the data collected during the duration of the connection is printed to
 \fIstdout\fR, together with the connection's relevant statistics: hosts
-and ports involved, time-stamps, packets, bytes, and the reason for
-data-collection termination.
+and ports involved, time-stamps, packet counts, bytes, and the reason
+for data-collection termination.
 .SH OPTIONS
 .TP
 .BI -c \ cache_increment
@@ -42,16 +39,19 @@ is \fI4096\fR.)  Note that each collected byte currently takes up two
 bytes of internal storage.
 .TP
 .BI -i \ interface
-The network interface to monitor.  (Default is \fIeth0\fR.)
+The network interface to monitor.  (Default is the first auto-detected
+interface of a known type, using the following priority scheme:
+Ethernet, SLIP, loopback, and dummy.  Please note that PPP is not yet
+supported, though will be very shortly.)
 .TP
 .B -s
-"Squash" output.  Consecutive carriage-returns/newlines in the data
-output will be replaced by a single newline.
+"Squash" output.  Consecutive carriage-returns/newlines in the collected
+data will be replaced by a single newline in the printed output.
 .TP
 .BI -t \ timeout
 The maximum idle time, in seconds between successive packets, allowed
 for a connection before dumping its data/statistics and discontinuing
-data-collection.  (Default is \fI3600\fR, i.e. one hour.)
+data-collection.  (Default is \fI3600\fR; one hour.)
 .sp
 A timeout value of \fI0\fR disables the timeout feature.  This is not
 recommended usage: \fBissniff\fR could eventually malloc() all computer
@@ -90,7 +90,7 @@ program:
 37 white
 .sp
 You must have a color-capable terminal, such as the Linux console or an
-xterm with colorization extensions, to use this option.
+xterm with colorization extensions, to use this option effectively.
 .TP
 .BI -F \ color
 Color number to use for output of data traveling from a monitored port
@@ -126,12 +126,12 @@ Exit immediately, with no output.  Turns off promiscuous mode.
 .B KILL
 Do \fBnot\fR send a \fISIGKILL\fR to \fBissniff\fR; doing so will leave
 the network interface it was monitoring in promiscuous mode.
-\fBissniff\fR exits cleanly on: \fISIGINT\fR, \fISIGHUP\fR,
-\fISIGQUIT\fR, and \fISIGTERM\fR.  (In fact, these are the only exit
-methods supported.)
+\fBissniff\fR exits cleanly on: \fISIGINT\fR, \fISIGQUIT\fR, and
+\fISIGTERM\fR.  (In fact, these are the only exit methods supported.)
 .SH BUGS
 None known; however, some features and options have not yet been
-implemented.
+implemented.  \fBissniff\fR has only been tested under Linux versions
+1.2.13 and 1.99.2.
 .SH REDISTRIBUTION TERMS
 Explicit permission, in the form of a personally-addressed written
 document or electronic mail message bearing either my written or
@@ -141,4 +141,6 @@ permitted, under any circumstances, without explicit permission in one
 of the aforementioned forms.
 .SH AUTHOR
 This code and documentation is Copyright (C) 1996, Jeffrey A. Uphoff
-<juphoff@nrao.edu>.  All rights reserved.
+<juphoff@nrao.edu>.
+.br
+All rights reserved.
