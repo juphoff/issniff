@@ -1,3 +1,5 @@
+* Finish implementing autoconf.
+
 * Finish Solaris port.
 
 * Add native command-line address selection.
