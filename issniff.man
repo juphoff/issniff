@@ -1,0 +1,146 @@
+.\" -*- nroff -*-
+.\" issniff.8,v 2.10 1996/05/30 17:23:50 juphoff Exp
+.TH issniff 8 "2 June 1996" "Version 0.7" "NRAO"
+.SH NAME
+issniff \- Industrial Strength SNIFFer
+.SH SYNOPSIS
+.B
+issniff
+[options] [+]\fBport\fR [[+]port ...]
+.SH DESCRIPTION
+\fBissniff\fR switches the selected (or auto-detected) network interface
+into "promiscuous" mode and monitors the network traffic visible to that
+interface, collecting data on TCP-protocol network connections to the
+destination port(s) selected on the command line.  At least one port
+must be specified.  A '+' prefix on a port number means to monitor
+traffic in both directions on connections to that port.
+.sp
+When a new network connection to a selected port is detected (a
+\fISYN\fR packet), \fBissniff\fR starts collecting data for that
+connection.  Once the connection terminates (a \fIFIN\fR or \fIRST\fR
+packet), or times out or exceeds the maximum data collection threshold,
+the data collected during the duration of the connection is printed to
+\fIstdout\fR, together with the connection's relevant statistics: hosts
+and ports involved, time-stamps, packet counts, bytes, and the reason
+for data-collection termination.
+.SH OPTIONS
+.TP
+.BI -c \ cache_increment
+The number of connection entries to expand the data cache by when an
+expansion is required.  (Default is \fI16\fR.)
+.sp
+Higher values should result in an infinitesimal speed improvement, but
+will also cause \fBissniff\fR to use more memory.
+.TP
+.BI -d \ max_data
+The maximum amount of data, in bytes, to collect for a connection before
+dumping its data/statistics and discontinuing data-collection.  (Default
+is \fI4096\fR.)  Note that each collected byte currently takes up two
+bytes of internal storage.
+.TP
+.BI -i \ interface
+The network interface to monitor.  (Default is the first auto-detected
+interface of a known type, using the following priority scheme:
+Ethernet, SLIP, loopback, and dummy.  Please note that PPP is not yet
+supported, though will be very shortly.)
+.TP
+.B -s
+"Squash" output.  Consecutive carriage-returns/newlines in the collected
+data will be replaced by a single newline in the printed output.
+.TP
+.BI -t \ timeout
+The maximum idle time, in seconds between successive packets, allowed
+for a connection before dumping its data/statistics and discontinuing
+data-collection.  (Default is \fI3600\fR; one hour.)
+.sp
+A timeout value of \fI0\fR disables the timeout feature.  This is not
+recommended usage: \fBissniff\fR could eventually malloc() all computer
+storage.
+.sp
+Due to the timeout algorithm used, some connections may not time out
+until their idle time has significantly exceeded this threshold value.
+This is not a bug.
+.TP
+.B -v
+Verbose mode.  Output one-line descriptions of new connections to
+\fIstderr\fR each time one is detected.
+.TP
+.B -C
+Colorize output, with color selection based on the travel direction of
+the packets--useful when monitoring traffic in both directions on a
+port.  Session headers, statistics, etc., are uncolorized.
+.sp
+The color numbers are the same as for Linux's color-capable 'ls'
+program:
+.sp
+30 black
+.br
+31 red
+.br
+32 green
+.br
+33 yellow
+.br
+34 blue
+.br
+35 magenta
+.br
+36 cyan
+.br
+37 white
+.sp
+You must have a color-capable terminal, such as the Linux console or an
+xterm with colorization extensions, to use this option effectively.
+.TP
+.BI -F \ color
+Color number to use for output of data traveling from a monitored port
+("backwards").  Implies \fB-C\fR.  (Default is \fI36\fR; cyan).
+.TP
+.BI -T \ color
+Color number to use for output of data traveling to a monitored port.
+Implies \fB-C\fR.  (Default is \fI33\fR; yellow.)
+.SH SIGNALS
+.TP
+.B USR1
+Causes \fBissniff\fR to output its current state information to
+\fIstderr\fR.
+.TP
+.B USR2
+Causes \fBissniff\fR to output a summary list of the currently-active
+network connections it is collecting data for to \fIstderr\fR.
+.TP
+.B HUP
+Display full output for all currently-active connections, then resume
+monitoring.
+.TP
+.B INT
+Exit with full output for all currently-active connections.  Turns off
+promiscuous mode.
+.TP
+.B QUIT
+Exit immediately, with no output.  Turns off promiscuous mode.
+.TP
+.B TERM
+Exit immediately, with no output.  Turns off promiscuous mode.
+.TP
+.B KILL
+Do \fBnot\fR send a \fISIGKILL\fR to \fBissniff\fR; doing so will leave
+the network interface it was monitoring in promiscuous mode.
+\fBissniff\fR exits cleanly on: \fISIGINT\fR, \fISIGQUIT\fR, and
+\fISIGTERM\fR.  (In fact, these are the only exit methods supported.)
+.SH BUGS
+None known; however, some features and options have not yet been
+implemented.  \fBissniff\fR has only been tested under Linux versions
+1.2.13 and 1.99.2.
+.SH REDISTRIBUTION TERMS
+Explicit permission, in the form of a personally-addressed written
+document or electronic mail message bearing either my written or
+electronic signature, respectively, is required for legal possession
+and/or use of \fBissniff\fR.  Redistribution in any form is not
+permitted, under any circumstances, without explicit permission in one
+of the aforementioned forms.
+.SH AUTHOR
+This code and documentation is Copyright (C) 1996, Jeffrey A. Uphoff
+<juphoff@nrao.edu>.
+.br
+All rights reserved.
