@@ -1,6 +1,6 @@
 .\" -*- nroff -*-
 .\" $Id$
-.TH issniff 8 "2 June 1996" "Version @@IS_VERSION@@" "NRAO"
+.TH issniff 8 "3 June 1996" "Version @@IS_VERSION@@" "NRAO"
 .SH NAME
 issniff \- Industrial Strength SNIFFer
 .SH SYNOPSIS
@@ -43,6 +43,13 @@ The network interface to monitor.  (Default is the first auto-detected
 interface of a known type, using the following priority scheme:
 Ethernet, SLIP, loopback, and dummy.  Please note that PPP is not yet
 supported, though will be very shortly.)
+.TP
+.B -n
+No local packets/connections.  Only packets/connections originating from
+\fBother\fR systems will be passed through to the packet-filtering
+layer, i.e. locally-originating packets/connections will be "lost."
+(Default is to pass/process all packets/connections.)  [Not fully
+tested.]
 .TP
 .B -s
 "Squash" output.  Consecutive carriage-returns/newlines in the collected
