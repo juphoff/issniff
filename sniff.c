@@ -10,7 +10,6 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-#include "memory.h"
 #include "sniff.h"
 
 #ifdef __linux__
@@ -48,25 +47,36 @@ dump_state (int sig)
 {
   int i;
 
-  signal (SIGHUP, dump_state);
-  fprintf (stderr, "\n* Current state:\n");
-  fprintf (stderr, "* Interface: %s\n", get_interface ());
-  fprintf (stderr, "* Max cache entries: %d\n", cache_max);
-  fprintf (stderr, "* Current cache entries: %d\n", cache_size);
-  fprintf (stderr, "* Cache increment: %d\n", cache_increment);
-  fprintf (stderr, "* Cache management (unsupported): %s\n", 
-	   cache_management ? "yes" : "no");
-  fprintf (stderr, "* Active connections: %d\n", curr_conn);
-  fprintf (stderr, "* Max data size (bytes): %d\n", maxdata);
-  fprintf (stderr, "* Idle timeout (seconds): %d\n", timeout);
-  fprintf (stderr, "* Squashed output: %s\n", squash_output ? "yes" : "no");
-  fprintf (stderr, "* Monitoring ports:");
+  signal (SIGUSR1, dump_state);
+  fprintf (stderr, "\n\
+** Current state:\n\
+*  Interface: %s\n\
+*  Max cache entries: %d\n\
+*  Current cache entries: %d\n\
+*  Cache increment: %d\n\
+*  Cache management (unsupported): %s\n\
+*  Active connections: %d\n\
+*  Max data size (bytes): %d\n\
+*  Idle timeout (seconds): %d\n\
+*  Squashed output: %s\n\
+*  Verbose mode: %s\n\
+*  Monitoring ports:",
+	   get_interface (),
+	   cache_max,
+	   cache_size,
+	   cache_increment,
+	   YN (cache_management),
+	   curr_conn,
+	   maxdata,
+	   timeout,
+	   YN (squash_output),
+	   YN (verbose));
 
   for (i = 0; i <= hiport; i++)
     if (ports[i].port)
       fprintf (stderr, " %d", i);
 
-  fprintf (stderr, "\n\n");
+  fputs ("\n\n", stderr);
 }
 
 /*
@@ -79,8 +89,8 @@ dump_conns (int sig)
   int i;
   PList *node;
 
-  signal (SIGUSR1, dump_conns);
-  fprintf (stderr, "\n* Current connections:\n");
+  signal (SIGUSR2, dump_conns);
+  fputs ("\n** Active connections:\n", stderr);
 
   for (i = 0; i <= hiport; i++)
     if ((node = (ports + i)->next))
@@ -91,23 +101,28 @@ dump_conns (int sig)
 	node = node->next;
       }
 
-  fprintf (stderr, "\n");
+  fputc ('\n', stderr);
 }
 
 static void
 expand_cache (void)
 {
   int i;
-  UCHAR *dblock, *lblock;
+  UCHAR *dblk, *lblk;
   PList *node = cache;
 
-  /* Consolidate? */
-  lblock = (UCHAR *)xmalloc (sizeof (PList) * cache_increment);
-  dblock = (UCHAR *)xmalloc (sizeof (UCHAR) * cache_increment * maxdata);
-
+  /* Consolidate?  Perhaps also make non-fatal? */
+  if (!(lblk = (UCHAR *)malloc (sizeof (PList) * cache_increment))) {
+    perror ("malloc");
+    exit (errno);
+  }
+  if (!(dblk = (UCHAR *)malloc (sizeof (UCHAR) * cache_increment * maxdata))) {
+    perror ("malloc");
+    exit (errno);
+  }
   for (i = 0; i < cache_increment; i++) {
-    node->next = (PList *)(lblock + sizeof (PList) * i);
-    node->next->data = dblock + sizeof (UCHAR) * i * maxdata;
+    node->next = (PList *)(lblk + sizeof (PList) * i);
+    node->next->data = dblk + sizeof (UCHAR) * i * maxdata;
     node = node->next;
   }
   cache_max += cache_increment;
@@ -141,7 +156,7 @@ find_node (PORT_T dport, ADDR_T daddr, PORT_T sport, ADDR_T saddr)
     /* Timeout stanza. */
     if (timeout && (now - node->timeout > timeout)) {
       PList *nnode = node->next;
-      END_NODE(node, dport, "TIMEOUT");
+      END_NODE (node, dport, "TIMEOUT");
       node = nnode;
     } else
       node = node->next;
@@ -226,7 +241,7 @@ main (int argc, char **argv)
 	verbose = 1;
 	break;
       default:
-	fprintf (stderr, "Usage: issniff [options] port [port...]\n");
+	fputs ("Usage: issniff [options] port [port...]\n", stderr);
 	return 1;
       }
     }
@@ -235,25 +250,32 @@ main (int argc, char **argv)
       hiport = thisport > hiport ? thisport : hiport;
     }
     /* Yes, wasting some memory for the sake of speed. */
-    ports = (Ports *)xmalloc (sizeof (Ports) * (hiport + 1));
+    if (!(ports = (Ports *)malloc (sizeof (Ports) * (hiport + 1)))) {
+      perror ("malloc");
+      exit (errno);
+    }
     memset (ports, 0, sizeof (Ports) * (hiport + 1));
 
     for (i = optind; i < argc; i++)
       ++ports[atoi (argv[i])].port;
   } else {
-    fprintf (stderr, "Must specify some ports!\n");
+    fputs ("Must specify some ports!\n", stderr);
     return 1;
   }
   open_interface ();
+  signal (SIGHUP, close_interface);
   signal (SIGINT, close_interface);
   signal (SIGQUIT, close_interface);
   signal (SIGTERM, close_interface);
   /* Initialize cache. */
-  cache = (PList *)xmalloc (sizeof (PList));
+  if (!(cache = (PList *)malloc (sizeof (PList)))) {
+    perror ("malloc");
+    exit (errno);
+  }
   cache->next = NULL;
   expand_cache ();		/* Just so we're ready for packet #1. */
-  signal (SIGHUP, dump_state);	/* Must come *after* data init's. */
-  signal (SIGUSR1, dump_conns);	/* Ditto. */
+  signal (SIGUSR1, dump_state);	/* Must come *after* data init's. */
+  signal (SIGUSR2, dump_conns);	/* Ditto. */
   sniff ();			/* Main loop is here. */
   close_interface (0);		/* Should not be reached. */
   return 0;
@@ -270,16 +292,16 @@ dump_node (PList *node, const char *reason)
   char *timep = ctime (&node->stime);
   time_t now = time (NULL);
 
-  printf ("------------------------------------------------------------------------\n");
+  puts ("------------------------------------------------------------------------");
   timep[strlen (timep) - 1] = 0; /* Zap newline. */
   printf ("Time: %s ", timep);
-  printf ("to %s", ctime (&now));
+  printf ("to %s", ctime (&now)); /* Two calls to printf() for a reason! */
   ia.s_addr = node->saddr;
   printf ("Path: %s:%d -> ", inet_ntoa (ia), node->sport);
   ia.s_addr = node->daddr;
   printf ("%s:%d\n", inet_ntoa (ia), node->dport);
-  printf ("Stat: %d packets, %d bytes ", node->pkts, node->dlen);
-  printf ("[%s]\n\n", reason);
+  printf ("Stat: %d packets, %d bytes [%s]\n\n", node->pkts, node->dlen,
+	  reason);
 
   while (node->dlen-- > 0) {
     if (*node->data < 32) {
@@ -290,10 +312,10 @@ dump_node (PList *node, const char *reason)
       case '\r':
       case '\n':
 	if (!squash_output || !((lastc == '\r') || (lastc == '\n')))
-	  printf ("\n");
+	  putchar ('\n');
 	break;
       case '\t':
-	printf ("\t");
+	putchar ('\t');
 	break;
       default:
 	printf ("<^%c>", (*node->data + 64));
@@ -301,11 +323,11 @@ dump_node (PList *node, const char *reason)
       }
     } else {
       if (isprint (*node->data))
-	printf ("%c", *node->data);
+	putchar (*node->data);
       else
 	printf ("<%d>", *node->data);
     }
     lastc = *node->data++;
   }
-  printf ("\n------------------------------------------------------------------------\n");
+  puts ("\n------------------------------------------------------------------------");
 }
