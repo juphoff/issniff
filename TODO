@@ -1,6 +1,8 @@
 * Problems with Linux & glibc--SEGV's.  Change to more "conventional"
   malloc'ing?  Is this what's causing Solaris to bumble around too?
 
+* BPF for Linux now that 2.1.x has it.
+
 * SIGUSR2 causes endless output looping.  (Not always...but what's up
   with that?!?)
 
