@@ -36,12 +36,12 @@ int non_tcp = 0;
  * Local variables.
  */
 static char of_name[MAXNAMLEN];
+static int addr_matching = 0;
 static int colorfrom = FROM_COLOR;
 static int colorize = 0;
 static int colorto = TO_COLOR;
 static int nolocal = OS_NOLOCAL;
 static int squash_output = 0;
-static struct sigaction sigact;
 
 /*
  * Local function prototypes.
@@ -180,15 +180,15 @@ show_state (int sig)
   fputs ("\n\n", stderr);
 }
 
-
 int
 main (int argc, char **argv)
 {
+  struct sigaction sigact;
+
   if (argc > 1) {
     char opt;
     int i;
 
-    /* Add an option for 'tee'ing to a file. */
     while ((opt = getopt (argc, argv, "F:O:T:c:d:i:o:t:Canrsv")) != -1) {
       switch (opt) {
       case 'C':
@@ -226,7 +226,7 @@ main (int argc, char **argv)
       case 'O':
 	of_methods |= to_file;
 #if 0
-	/* Still working on other filters.... */
+	/* Still working on/thinking about other filters.... */
 	filter = sf_filter;
 	if_read = if_read_ip_raw;
 #endif
@@ -256,8 +256,12 @@ main (int argc, char **argv)
       }
     }
     for (i = optind; i < argc; i++) {
-      int thisport = argv[i][0] == '+' ? atoi (&argv[i][1]) : atoi (argv[i]);
-      hiport = thisport > hiport ? thisport : hiport;
+      if (!strncmp (argv[i], "+addr", 5)) {
+	break;
+      } else {
+	int thisport = argv[i][0] == '+' ? atoi (&argv[i][1]) : atoi (argv[i]);
+	hiport = thisport > hiport ? thisport : hiport;
+      }
     }
     /* Yes, wasting some (lots at times) memory for the sake of speed. */
     if (!(ports = (Ports *)malloc (sizeof (Ports) * (hiport + 1)))) {
@@ -265,14 +269,19 @@ main (int argc, char **argv)
       exit (errno);
     }
     memset (ports, 0, sizeof (Ports) * (hiport + 1));
-
+    /* Second time through arg. lists.  Clean this up. */
     for (i = optind; i < argc; i++) {
-      int thisport = argv[i][0] == '+' ? atoi (&argv[i][1]) : atoi (argv[i]);
-      ports[thisport].port = 1;
-      ports[thisport].twoway = argv[i][0] == '+' ? 1 : 0;
+      if (!strncmp (argv[i], "+addr", 5)) {
+	addr_matching = i;
+	break;
+      } else {
+	int thisport = argv[i][0] == '+' ? atoi (&argv[i][1]) : atoi (argv[i]);
+	ports[thisport].port = 1;
+	ports[thisport].twoway = argv[i][0] == '+' ? 1 : 0;
+      }
     }
   } else {
-    fputs ("Must specify some ports!\n", stderr);
+    fputs ("Must specify some ports and/or addresses!\n", stderr);
     return 1;
   }
   if (sigfillset (&blockset) < 0) {
@@ -286,9 +295,13 @@ main (int argc, char **argv)
 #endif
   sigact.sa_flags = SIG_STUPIDITY;
   sigact.sa_handler = *if_close;
-  if_open (nolocal);		/* Itty-bitty window here. */
-  sigaction (SIGQUIT, &sigact, NULL);
-  sigaction (SIGTERM, &sigact, NULL);
+  if_open (nolocal);
+
+  if ((sigaction (SIGQUIT, &sigact, NULL) < 0) ||
+      (sigaction (SIGTERM, &sigact, NULL) < 0)) {
+    perror ("sigaction (QUIT|TERM)");
+    exit (errno);
+  }
   /* Initialize cache. */
   if (!(cache = (PList *)malloc (sizeof (PList)))) {
     perror ("malloc");
@@ -297,12 +310,30 @@ main (int argc, char **argv)
   cache->next = NULL;
   EXPAND_CACHE;			/* Get ready for first packet. */
   sigact.sa_handler = dump_conns;
-  sigaction (SIGINT, &sigact, NULL);
-  sigaction (SIGHUP, &sigact, NULL);
+
+  if ((sigaction (SIGINT, &sigact, NULL) < 0) ||
+      (sigaction (SIGHUP, &sigact, NULL) < 0)) {
+    int err = errno;
+    perror ("sigaction (INT|HUP)");
+    if_close (0);
+    exit (err);
+  }
   sigact.sa_handler = show_state;
-  sigaction (SIGUSR1, &sigact, NULL);
+
+  if (sigaction (SIGUSR1, &sigact, NULL) < 0) {
+    int err = errno;
+    perror ("sigaction (USR1)");
+    if_close (0);
+    exit (err);
+  }
   sigact.sa_handler = show_conns;
-  sigaction (SIGUSR2, &sigact, NULL);
+
+  if (sigaction (SIGUSR2, &sigact, NULL) < 0) {
+    int err = errno;
+    perror ("sigaction (USR2)");
+    if_close (0);
+    exit (err);
+  }
   if_read (*filter);		/* Main loop. */
   if_close (0);			/* Not reached. */
   return -1;
