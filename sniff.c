@@ -35,9 +35,30 @@ static void expand_cache (void);
 static void dump_conns (int);
 static void dump_node (PList *, const char *);
 static void dump_state (int);
-static void shrink_cache (int);
+static void show_conns (int);
+/* static void shrink_cache (int); */
 static void sniff (void);
 static PList *find_node (PORT_T, ADDR_T, PORT_T, ADDR_T);
+
+/*
+ * Signal handler.
+ */
+static void
+dump_conns (int sig)
+{
+  int i;
+  PList *node;
+
+  for (i = 0; i <= hiport; i++) {
+    if ((node = (ports + i)->next)) {
+      while (node) {
+	dump_node (node, "SIGINT");
+	node = node->next;
+      }
+    }
+  }
+  close_interface (sig);
+}
 
 /*
  * Signal handler.
@@ -84,13 +105,13 @@ dump_state (int sig)
  * Signal handler.
  */
 static void
-dump_conns (int sig)
+show_conns (int sig)
 {
   char *timep;
   int i;
   PList *node;
 
-  signal (SIGUSR2, dump_conns);
+  signal (SIGUSR2, show_conns);
   fputs ("\n** Active connections:\n", stderr);
 
   for (i = 0; i <= hiport; i++) {
@@ -106,6 +127,10 @@ dump_conns (int sig)
   fputc ('\n', stderr);
 }
 
+/*
+ * Allocates in blocks.  May need to change somewhat for later
+ * implementation of a cache management scheme.
+ */
 static void
 expand_cache (void)
 {
@@ -131,15 +156,16 @@ expand_cache (void)
   cache_size += cache_increment;
 }
 
+#if 0
 /*
  * Only used when cache management requested.
  */
 static void
 shrink_cache (int tozap)
 {
-  /* Stub. */
   return;
 }
+#endif
 
 /*
  * Does double duty as a node-finder and as a timeout routine.
@@ -269,7 +295,6 @@ main (int argc, char **argv)
   }
   open_interface ();
   signal (SIGHUP, close_interface);
-  signal (SIGINT, close_interface);
   signal (SIGQUIT, close_interface);
   signal (SIGTERM, close_interface);
   /* Initialize cache. */
@@ -278,11 +303,12 @@ main (int argc, char **argv)
     exit (errno);
   }
   cache->next = NULL;
-  expand_cache ();		/* Just so we're ready for packet #1. */
-  signal (SIGUSR1, dump_state);	/* Must come *after* data init's. */
-  signal (SIGUSR2, dump_conns);	/* Ditto. */
-  sniff ();			/* Main loop is here. */
-  close_interface (0);		/* Should not be reached. */
+  expand_cache ();		/* Get ready for first packet. */
+  signal (SIGINT, dump_conns);
+  signal (SIGUSR1, dump_state);
+  signal (SIGUSR2, show_conns);
+  sniff ();			/* Main loop. */
+  close_interface (0);		/* Not reached. */
   return 0;
 }
 
