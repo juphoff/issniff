@@ -13,15 +13,17 @@ OS	= linux
 # Set level of DEBUG.
 DEBUGS	= -DDEBUG
 
+# Optional OS-specific defines.
+DEFINES_sunos	= -D__USE_FIXED_PROTOTYPES__
+
 # General definitions.
-DEFINES	= -D__USE_FIXED_PROTOTYPES__ -DIS_VERSION=\"$(IS_VERSION)\" \
-	  -DOSVER=\"$(OS)\"
+DEFINES	= $(DEFINES_$(OS)) -DIS_VERSION=\"$(IS_VERSION)\" -DOSVER=\"$(OS)\"
 
 # THIS CODE HAS NOT BEEN TESTED UNDER ANY COMPILER OTHER THAN GCC!
 #
 # For normal use.
 CC	= gcc
-# Typical way to generate a.out binaries with an ELF-defaulting compiler.
+# Typical Linux way to generate a.out binaries with an ELF-defaulting compiler.
 #CC	= gcc -b i486-linuxaout
 
 # The Ted Ts'o express.  Noisy under e.g. SunOS.
@@ -29,12 +31,15 @@ WFLAGS	= -ansi -pedantic -Wall -Wcast-align -Wcast-qual -Winline \
 	  -Wmissing-prototypes -Wnested-externs -Wpointer-arith -Wshadow \
 	  -Wstrict-prototypes -Wwrite-strings 
 
+# Optional OS-specific flags.
+CFLAGS_linux	= -fomit-frame-pointer -fno-strength-reduce
+
 # For normal use.
-#CFLAGS	= -O6 -pipe -fomit-frame-pointer $(DEBUGS) $(DEFINES) $(WFLAGS)
+#CFLAGS	= -O6 $(CFLAGS_$(OS)) $(DEBUGS) $(DEFINES) $(WFLAGS)
 #LDFLAGS	= -s
+
 # For development/debugging.
-CFLAGS	= -g -O6 -fomit-frame-pointer -fno-strength-reduce \
-	   $(DEBUGS) $(DEFINES) $(WFLAGS)
+CFLAGS	= -g -O6 $(CFLAGS_$(OS)) $(DEBUGS) $(DEFINES) $(WFLAGS)
 LDFLAGS	= -g
 
 .PHONY:	all clean distclean realclean
