@@ -157,7 +157,10 @@ OS's.  \fBissniff\fR exits cleanly on: \fISIGINT\fR, \fISIGQUIT\fR, and
 .SH BUGS
 Slight flakiness in the signal-handling, which needs a rewrite.
 .sp
-OSF/1 (Digital UNIX) seems to be garbling a bit.  Investigating.
+OSF/1 (Digital UNIX) seems to be garbling output a bit.  Investigating.
+.sp
+Recent changes have not been tested for proper functionality under
+SunOS; however, they compile fine.
 .SH NOTE
 Some features and/or options have not yet been implemented.
 \fBissniff\fR has been tested under:
