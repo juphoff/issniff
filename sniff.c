@@ -98,7 +98,7 @@ dump_state (int sig)
 	   maxdata,
 	   timeout,
 	   YN (squash_output),
-	   YN (verbose)
+	   YN (verbose),
 	   YN (colorize));
 
   for (i = 0; i <= hiport; i++) {
