@@ -84,7 +84,7 @@ if_open_net (int nolocal)
  * time.)
  */
 void
-if_read_ip (void (*filter) (UCHAR *, int))
+if_read_ip_net (void (*filter) (UCHAR *, int))
 {
   int bytes;
   UCHAR buf[IF_BUFSIZ];
