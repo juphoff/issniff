@@ -1,4 +1,4 @@
-/* linux.h,v 2.3 1996/05/30 04:54:36 juphoff Exp */
+/* $Id$ */
 
 #include <netinet/ip.h>
 #include <netinet/protocols.h>
