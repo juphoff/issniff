@@ -6,7 +6,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/socket.h>
-#include <net/if.h>
 #include <sys/ioctl.h>
 #include "if.h"
 #include "if_"OSVER".h"
