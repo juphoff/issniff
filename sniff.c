@@ -13,11 +13,13 @@
 # include "linux.h"
 #endif
 
+/* Not finished: SunOS code not yet distributed, and messy!. */
 #ifdef __sun__
 # include <unistd.h>
 # include "sunos.h"
 #endif
 
+/* Not even started! */
 #ifdef __osf__
 # define USING_BPF
 # include "osf.h"
@@ -38,7 +40,7 @@ static int colorto = TO_COLOR;
 static int curr_conn = 0;
 static int hiport = 0;
 static int maxdata = IS_MAXDATA;
-static int nolocal = 0;
+static int nolocal = OS_NOLOCAL;
 static int squash_output = 0;
 static int timeout = IS_TIMEOUT;
 static int verbose = 0;
@@ -168,7 +170,7 @@ find_node (PORT_T dport, ADDR_T daddr, PORT_T sport, ADDR_T saddr)
     /* What's the optimal order for these, I wonder? */
     if ((node->sport == sport) && (node->saddr == saddr) &&
 	(node->daddr == daddr)) {
-      break;
+      return node;
     }
     /* Timeout stanza. */
     if (timeout && (now - node->timeout > timeout)) {
