@@ -9,6 +9,8 @@
 /* Some general definitions. */
 #define DEFAULT_INTERFACE "eth0"
 #define SOCKPROT 0x300
+#define UCHAR u_char
+#define UINT u_int
 
 /* IP protocol header definitions. */
 #define IPPROT(X) ((X)->protocol)
@@ -25,6 +27,9 @@
 #define DOFF(X) ((X)->th_off * 4)
 #define SYN(X) ((X)->th_flags & TH_SYN)
 #define FINRST(X) ((X)->th_flags & (TH_FIN | TH_RST))
+#define FIN(X) ((X)->th_flags & TH_FIN)
+#define RST(X) ((X)->th_flags & TH_RST)
+
 #define PORT_T u_short
 
 typedef struct ethhdr ETHhdr;
