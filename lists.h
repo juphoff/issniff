@@ -51,7 +51,7 @@ enum { pkt_to, pkt_from };
   if ((NODE)->prev) { \
     (NODE)->prev->next = (NODE)->next; \
   } else { \
-    (ports + (PORT))->next = (NODE)->next; \
+    ports[(PORT)].next = (NODE)->next; \
   } \
   (NODE)->next = cache->next; \
   cache->next = (NODE); \
@@ -94,13 +94,13 @@ enum { pkt_to, pkt_from };
   memset (new->data, 0, sizeof (UDATA) * maxdata); \
   time (&new->stime); \
   new->timeout = new->stime; \
-  if (!(ports + (DPORT))->next) { \
+  if (!ports[(DPORT)].next) { \
     new->next = NULL; \
-    (ports + (DPORT))->next = new; \
+    ports[(DPORT)].next = new; \
   } else { \
-    (ports + (DPORT))->next->prev = new; \
-    new->next = (ports + (DPORT))->next; \
-    (ports + (DPORT))->next = new; \
+    ports[(DPORT)].next->prev = new; \
+    new->next = ports[(DPORT)].next; \
+    ports[(DPORT)].next = new; \
   } \
 }
 
@@ -108,7 +108,7 @@ enum { pkt_to, pkt_from };
   struct in_addr ia; \
   ia.s_addr = (SADDR); \
   fprintf (stderr, "*  %s: %s:%d %s ", (MSG), inet_ntoa (ia), (SPORT), \
-	   (ports + (DPORT))->twoway ? "<->" : "->"); \
+	   ports[(DPORT)].twoway ? "<->" : "->"); \
   ia.s_addr = (DADDR); \
   fprintf (stderr, "%s:%d\n", inet_ntoa (ia), (DPORT)); \
 }
