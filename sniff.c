@@ -16,9 +16,9 @@
 /*
  * Local variables.
  */
-#if 0
 static char of_name[NAME_MAX];
-#endif
+enum { to_stdout = 1, to_file = 2 };
+enum { s_finrst, s_maxdata, s_timeout };
 static int all_conns = 0;	/* New: doesn't work right yet. */
 static int cache_increment = CACHE_INC;
 static int cache_max = 0;
@@ -30,13 +30,14 @@ static int curr_conn = 0;
 static int hiport = 0;
 static int maxdata = IS_MAXDATA;
 static int nolocal = OS_NOLOCAL;
+static int of_methods = to_stdout;
 static int squash_output = 0;
 static int timeout = IS_TIMEOUT;
 static int verbose = 0;
-static PList *cache;
-static Ports *ports;
 static int stats[] = { 0, 0, 0 };
-enum { s_finrst, s_maxdata, s_timeout };
+static FILE *of_p = NULL;
+static Ports *ports;
+static PList *cache;
 
 #if defined(DEBUG) && defined(USING_BPF)
 static int non_tcp = 0;
@@ -47,6 +48,7 @@ static int non_tcp = 0;
  */
 static void dump_conns (int);
 static void dump_node (const PList *, const char *);
+static void dump_node_out (const PList *, const char *, FILE *);
 static void rt_filter (UCHAR *, int);
 #if 0
 static void sf_filter (UCHAR *, int);
@@ -94,7 +96,7 @@ dump_conns (int sig)
   if (sig == SIGHUP) {
     return;
   }
-  (*if_close) (sig);
+  if_close (sig);
 }
 
 /*
@@ -190,8 +192,8 @@ show_state (int sig)
 static PList *
 find_node (PORT_T dport, ADDR_T daddr, PORT_T sport, ADDR_T saddr)
 {
-  PList *node = ports[dport].next;
   time_t now = time (NULL);
+  PList *node = ports[dport].next;
 
   while (node) {
     /* What's the optimal order for these, I wonder? */
@@ -219,11 +221,8 @@ main (int argc, char **argv)
     char opt;
     int i;
 
-#if 0    
-    while ((opt = getopt (argc, argv, "F:T:c:d:i:o:t:Cansv")) != -1) {
-#else
-    while ((opt = getopt (argc, argv, "F:T:c:d:i:t:Cansv")) != -1) {
-#endif
+    /* Add an option for 'tee'ing to a file. */
+    while ((opt = getopt (argc, argv, "F:O:T:c:d:i:o:t:Cansv")) != -1) {
       switch (opt) {
       case 'C':
 	colorize = 1;
@@ -255,13 +254,21 @@ main (int argc, char **argv)
 	nolocal = 1;
 	break;
 	/* Under construction. */
-#if 0
       case 'o':
-	filter = sf_filter;
+	of_methods = to_file;
+      case 'O':
+	of_methods |= to_file;
+	/* Still working on other filters.... */
+/* 	filter = sf_filter; */
 /* 	if_read = if_read_ip_raw; */
 	strncpy (of_name, optarg, NAME_MAX);
+
+	if (!(of_p = fopen (of_name, "a"))) {
+	  fprintf (stderr, "Cannot open output file '%s': %s\n", of_name,
+		   strerror (errno));
+	  exit (errno);
+	}
 	break;
-#endif
       case 's':
 	squash_output = 1;
 	break;
@@ -296,7 +303,7 @@ main (int argc, char **argv)
     fputs ("Must specify some ports!\n", stderr);
     return 1;
   }
-  (*if_open) (nolocal);
+  if_open (nolocal);
   signal (SIGQUIT, *if_close);
   signal (SIGTERM, *if_close);
   /* Initialize cache. */
@@ -310,9 +317,22 @@ main (int argc, char **argv)
   signal (SIGHUP, dump_conns);
   signal (SIGUSR1, show_state);
   signal (SIGUSR2, show_conns);
-  (*if_read) (*filter);		/* Main loop. */
-  (*if_close) (0);		/* Not reached. */
+  if_read (*filter);		/* Main loop. */
+  if_close (0);			/* Not reached. */
   return -1;
+}
+
+/*
+ * This is inefficient (!), but a quick hack.  Things will change....
+ */ 
+static void
+dump_node (const PList *node, const char *reason)
+{
+  if (of_methods & to_file)
+    dump_node_out (node, reason, of_p);
+
+  if (of_methods & to_stdout)
+    dump_node_out (node, reason, stdout);
 }
 
 /*
@@ -321,29 +341,29 @@ main (int argc, char **argv)
  * Output of two-way monitoring when not colorizing looks ugly; needs work.
  */
 static void
-dump_node (const PList *node, const char *reason)
+dump_node_out (const PList *node, const char *reason, FILE *fh)
 {
-  int current_color = NO_COLOR;
-  struct in_addr ia;
   UCHAR data, lastc = 0;
-  UDATA *datp = node->data;
-  UINT dlen = node->dlen;
   char *timep = ctime (&node->stime);
+  UDATA *datp = node->data;
+  int current_color = NO_COLOR;
   time_t now = time (NULL);
+  UINT dlen = node->dlen;
+  struct in_addr ia;
 
-  puts ("========================================================================");
+  fputs ("========================================================================\n", fh);
   timep[strlen (timep) - 1] = 0; /* Zap newline. */
-  printf ("Time: %s ", timep);
-  printf ("to %s", ctime (&now)); /* Two calls to printf() for a reason! */
+  fprintf (fh, "Time: %s ", timep);
+  fprintf (fh, "to %s", ctime (&now)); /* Two calls to printf() for a reason! */
   ia.s_addr = node->saddr;
-  printf ("Path: %s:%d %s ", inet_ntoa (ia), node->sport, 
+  fprintf (fh, "Path: %s:%d %s ", inet_ntoa (ia), node->sport, 
 	  ports[node->dport].twoway ? "<->" : "->");
   ia.s_addr = node->daddr;
-  printf ("%s:%d\n", inet_ntoa (ia), node->dport);
-  printf ("Stat: %d/%d packets (to/from), %d bytes [%s]%s\n",
+  fprintf (fh, "%s:%d\n", inet_ntoa (ia), node->dport);
+  fprintf (fh, "Stat: %d/%d packets (to/from), %d bytes [%s]%s\n",
 	  node->pkts[pkt_to], node->pkts[pkt_from], dlen, reason,
-	  node->caught_late ? " [LATE]" : "");
-  puts ("------------------------------------------------------------------------");
+	  node->caught_syn != with_syn ? " [LATE]" : "");
+  fputs ("------------------------------------------------------------------------\n", fh);
 
   while (dlen-- > 0) {
     /* Ack, can't tell which way NULL bytes came from this way. */
@@ -352,9 +372,9 @@ dump_node (const PList *node, const char *reason)
 
       if (current_color != colorfrom) {
 	if (colorize) {
-	  printf ("%c[%dm", 0x1b, current_color = colorfrom);
+	  fprintf (fh, "%c[%dm", 0x1b, current_color = colorfrom);
 	} else {
-	  fputs ("\n<| ", stdout);
+	  fputs ("\n<| ", fh);
 	  current_color = colorfrom;
 	  lastc = '\n';
 	}
@@ -364,18 +384,18 @@ dump_node (const PList *node, const char *reason)
 
       if (current_color != colorto) {
 	if (colorize) {
-	  printf ("%c[%dm", 0x1b, current_color = colorto);
+	  fprintf (fh, "%c[%dm", 0x1b, current_color = colorto);
 	} else {
-	  fputs ("\n>| ", stdout);
+	  fputs ("\n>| ", fh);
 	  current_color = colorto;
 	  lastc = '\n';
 	}
       }
     }
     if (data >= 127) {
-      printf ("<%d>", data);
+      fprintf (fh, "<%d>", data);
     } else if (data >= 32) {
-      putchar (data);
+      putc (data, fh);
     } else {
       switch (data) {
       case '\0':
@@ -387,27 +407,28 @@ dump_node (const PList *node, const char *reason)
 	/* Can't tell which end a \n came from when colorizing. */
 	if (!squash_output || !((lastc == '\r') || (lastc == '\n'))) {
 	  if (!colorize && ports[node->dport].twoway) {
-	    fputs ("\n | ", stdout); /* Fix me! */
+	    fputs ("\n | ", fh); /* Fix me! */
 	  } else {
-	    putchar ('\n');
+	    putc ('\n', fh);
 	  }
 	}
 	break;
       case '\t':
 	/* Add an option to print the control code instead of expanding it? */
-	putchar ('\t');
+	putc ('\t', fh);
 	break;
       default:
-	printf ("<^%c>", (data + 64));
+	fprintf (fh, "<^%c>", (data + 64));
 	break;
       }
     }
     lastc = data;
   }
   if (colorize && current_color != NO_COLOR) {
-    printf ("%c[00m", 0x1b);
+    fprintf (fh, "%c[00m", 0x1b);
   }
-  puts ("\n========================================================================");
+  fputs ("\n========================================================================\n", fh);
+  fflush (fh);
 }
 
 
@@ -424,6 +445,9 @@ dump_node (const PList *node, const char *reason)
  *
  * Need to check FIN/RST packets from remote end (e.g. connection
  * refused), even when not in two-way mode.
+ *
+ * Should probably have two copies of this: a "normal" one and one that
+ * can catch connections "late."
  */
 static void
 rt_filter (UCHAR *buf, int len)
@@ -464,19 +488,24 @@ rt_filter (UCHAR *buf, int len)
       PList *node = find_node (dport, daddr, sport, saddr);
 
       if (!node) {
-	/* Need all_conns detect both ways! */
+	/* I'll probably need to add all_conns detection both ways. */
 	if (SYN (tcph)) {
-	  ADD_NODE (dport, daddr, sport, saddr, 0);
-
 	  if (verbose) {
 	    MENTION (dport, daddr, sport, saddr, "New connection");
 	  }
+	  ADD_NODE (dport, daddr, sport, saddr, with_syn,
+		    &buf[IPHLEN (iph) + DOFF (tcph)], iph, tcph, data_to);
 	} else if (all_conns && !FINRST (tcph)) {
-	  ADD_NODE (dport, daddr, sport, saddr, 1);
-
+	  /*
+	   * Bug: if this is the ACK between the two FIN's for this
+	   * connection, we'll get an erroneous (two-packet) connection
+	   * track.  Need to save state here somehow...blah.
+	   */
 	  if (verbose) {
 	    MENTION (dport, daddr, sport, saddr, "Detected 'late'");
 	  }
+	  ADD_NODE (dport, daddr, sport, saddr, without_syn,
+		    &buf[IPHLEN (iph) + DOFF (tcph)], iph, tcph, data_to);
 	}
       } else {
 	++node->pkts[pkt_to];
@@ -508,7 +537,7 @@ sf_filter (UCHAR *buf, int len)
       int err = errno;
 
       perror ("open");
-      (*if_close) (0);
+      if_close (0);
       exit (err);
     }
   }
