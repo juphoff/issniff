@@ -1,6 +1,6 @@
 .\" -*- nroff -*-
 .\" $Id$
-.TH issniff 8 "24 May 1996" "Version 0.3" "NRAO"
+.TH issniff 8 "26 May 1996" "Version 0.4" "NRAO"
 .SH NAME
 issniff \- Industrial Strength SNIFFer
 .SH SYNOPSIS
@@ -42,6 +42,13 @@ is \fI4096\fR.)
 .BI -i \ interface
 The network interface to monitor.  (Default is \fIeth0\fR.)
 .TP
+.B -m
+"Manage" the cache.  (\fINot yet implemented\fR)
+.TP
+.B -s
+"Squash" output.  Consecutive carriage-returns/newlines in the data
+output will be replaced by a single newline.
+.TP
 .BI -t \ timeout
 The maximum idle time, in seconds between successive packets, allowed
 for a connection before dumping its data/statistics and discontinuing
@@ -54,13 +61,6 @@ storage.
 Due to the timeout algorithm used, some connections may not time out
 until their idle time has significantly exceeded this threshold value.
 This is not a bug.
-.TP
-.B -m
-"Manage" the cache.  (\fINot yet implemented\fR)
-.TP
-.B -s
-"Squash" output.  Consecutive carriage-returns/newlines in the data
-output will be replaced by a single newline.
 .TP
 .B -v
 Verbose mode.  Output one-line descriptions of new connections to
@@ -76,9 +76,8 @@ Causes \fBissniff\fR to output a summary list of the currently-active
 network connections it is collecting data for to \fIstderr\fR.
 .TP
 .B INT
-Exit immediately, with no output.  (This will eventually be changed to
-exit with output for all of the currently-active connections.)  Turns
-off promiscuous mode.
+Exit with full output for all currently-active connections.  Turns off
+promiscuous mode.
 .TP
 .B HUP
 Exit immediately, with no output.  Turns off promiscuous mode.
@@ -105,8 +104,6 @@ electronic signature, respectively, is required for legal possession
 and/or use of \fBissniff\fR.  Redistribution in any form is not
 permitted, under any circumstances, without explicit permission in one
 of the aforementioned forms.
-.sp
-This code and documentation is Copyright (C) 1996, Jeffrey A. Uphoff.
-All rights reserved.
 .SH AUTHOR
-Jeffrey A. Uphoff <juphoff@nrao.edu>
+This code and documentation is Copyright (C) 1996, Jeffrey A. Uphoff
+<juphoff@nrao.edu>.  All rights reserved.
