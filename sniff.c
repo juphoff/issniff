@@ -25,15 +25,15 @@ static int cache_size = 0;
 static int curr_conn = 0;
 static int hiport = 0;
 static int maxdata = IS_MAXDATA;
-static int squash_output = 0;	/* Squash (compress) sequential newlines. */
-static int timeout = IS_TIMEOUT; /* Eventually CL overrideable. */
-static int verbose = 0;		/* Running commentary of new connections. */
+static int squash_output = 0;
+static int timeout = IS_TIMEOUT;
+static int verbose = 0;
 static PList *cache;
 static Ports *ports;
 
 static void expand_cache (void);
 static void dump_conns (int);
-static void dump_node (PList *, const char *);
+static void dump_node (const PList *, const char *);
 static void dump_state (int);
 static void show_conns (int);
 /* static void shrink_cache (int); */
@@ -72,22 +72,22 @@ dump_state (int sig)
   fprintf (stderr, "\n\
 ** Current state:\n\
 *  Interface: %s\n\
-*  Max cache entries: %d\n\
+*  Active connections: %d\n\
 *  Current cache entries: %d\n\
+*  Max cache entries: %d\n\
 *  Cache increment: %d\n\
 *  Cache management (unsupported): %s\n\
-*  Active connections: %d\n\
 *  Max data size (bytes): %d\n\
 *  Idle timeout (seconds): %d\n\
 *  Squashed output: %s\n\
 *  Verbose mode: %s\n\
 *  Monitoring ports:",
 	   get_interface (),
-	   cache_max,
+	   curr_conn,
 	   cache_size,
+	   cache_max,
 	   cache_increment,
 	   YN (cache_management),
-	   curr_conn,
 	   maxdata,
 	   timeout,
 	   YN (squash_output),
@@ -177,6 +177,7 @@ find_node (PORT_T dport, ADDR_T daddr, PORT_T sport, ADDR_T saddr)
   time_t now = time (NULL);
 
   while (node) {
+    /* What's the optimal order for these, I wonder? */
     if ((node->sport == sport) && (node->saddr == saddr) &&
 	(node->daddr == daddr)) {
       break;
@@ -202,7 +203,8 @@ sniff (void)
   IPhdr *iph;
   TCPhdr *tcph;
   PList *node;
-  
+
+  /* Main loop. */
   for (;;) {
     if (read (iface, buf, IS_BUFSIZ) >= 0) {
       /* Should probably look at ETHhhdr and pitch non-IP. */
@@ -316,15 +318,16 @@ main (int argc, char **argv)
  * A real mess.  Will probably be moved to children.
  */
 static void
-dump_node (PList *node, const char *reason)
+dump_node (const PList *node, const char *reason)
 {
   struct in_addr ia;
   UCHAR lastc = 0;
   UCHAR *data = node->data;
+  UINT dlen = node->dlen;
   char *timep = ctime (&node->stime);
   time_t now = time (NULL);
 
-  puts ("------------------------------------------------------------------------");
+  puts ("========================================================================");
   timep[strlen (timep) - 1] = 0; /* Zap newline. */
   printf ("Time: %s ", timep);
   printf ("to %s", ctime (&now)); /* Two calls to printf() for a reason! */
@@ -332,10 +335,11 @@ dump_node (PList *node, const char *reason)
   printf ("Path: %s:%d -> ", inet_ntoa (ia), node->sport);
   ia.s_addr = node->daddr;
   printf ("%s:%d\n", inet_ntoa (ia), node->dport);
-  printf ("Stat: %d packets, %d bytes [%s]\n\n", node->pkts, node->dlen,
-	  reason);
+  printf ("Stat: %d packets, %d bytes [%s]\n", node->pkts, dlen, reason);
+  puts ("------------------------------------------------------------------------");
 
-  while (node->dlen-- > 0) {
+  /* Clean this up. */
+  while (dlen-- > 0) {
     if (*data < 32) {
       switch (*data) {
       case '\0':
@@ -364,5 +368,5 @@ dump_node (PList *node, const char *reason)
     }
     lastc = *data++;
   }
-  puts ("\n------------------------------------------------------------------------");
+  puts ("\n========================================================================");
 }
