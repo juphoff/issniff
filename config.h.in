@@ -2,3 +2,6 @@
 
 /* Define u_int32_t if necessary. */
 #undef u_int32_t
+
+/* Have <linux/filter.h> */
+#undef HAVE_LINUX_FILTER_H

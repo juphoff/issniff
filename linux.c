@@ -38,11 +38,21 @@ if_close_net (int sig)
 }
 
 /*
- * Linux is easy.
+ * BPF.
+ */
+#ifdef HAVE_LINUX_FILTER_H_
+void
+if_open_net (int nolocal)
+{
+}
+#else
+/*
+ * Pre-BPF.
  */
 void
 if_open_net (int nolocal)
 {
+				/* This is obsolete as of 2.1.x. */
   if ((iface = socket (AF_INET, SOCK_PACKET,
 		       ntohs (nolocal ? ETH_P_IP : ETH_P_ALL))) < 0) {
     perror ("socket");
@@ -77,6 +87,7 @@ if_open_net (int nolocal)
     fprintf (stderr, "Warning: locally-originated packets not monitored!\n\n");
   }
 }
+#endif
 
 /*
  * Mainly here for portability since other OS's buffer the sniffing.
