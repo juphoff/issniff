@@ -11,7 +11,7 @@ typedef struct PList {
   UDATA *data;			/* 2:1 byte ratio for data; gives direction. */
   UINT dlen, pkts[2];
   time_t stime, timeout;
-  int caught_late;
+  int caught_syn;
 } PList;
 
 /* Pseudo-hash. */
@@ -22,26 +22,27 @@ typedef struct Ports {
 } Ports;
 
 enum { pkt_to, pkt_from };
+enum { with_syn, without_syn, first_fin };
 
 /*
  * Major functionality is provided by these macros.
  */
 #define EXPAND_CACHE { \
-  int i; \
   UCHAR *blk; \
+  int i; \
   PList *cnode = cache; \
   if (!(blk = (UCHAR *)malloc ((sizeof (PList) + sizeof (UDATA) * maxdata) * \
 			       cache_increment))) { \
-    perror ("malloc"); \
-    exit (errno); \
+    perror ("** malloc"); 	/* Not fatal, though recovery is untested. */ \
+  } else { \
+    for (i = 0; i < cache_increment; i++, blk += sizeof (UDATA) * maxdata) { \
+      cnode->next = (PList *)blk; \
+      cnode->next->data = (UDATA *)(blk += sizeof (PList)); \
+      cnode = cnode->next; \
+    } \
+    cache_max += cache_increment; \
+    cache_size += cache_increment; \
   } \
-  for (i = 0; i < cache_increment; i++, blk += sizeof (UDATA) * maxdata) { \
-    cnode->next = (PList *)blk; \
-    cnode->next->data = (UDATA *)(blk += sizeof (PList)); \
-    cnode = cnode->next; \
-  } \
-  cache_max += cache_increment; \
-  cache_size += cache_increment; \
 }
 
 #define END_NODE(NODE, PORT, REASON) { \
@@ -76,34 +77,39 @@ enum { pkt_to, pkt_from };
   } \
 }
 
-#define ADD_NODE(DPORT, DADDR, SPORT, SADDR, LATE) { \
+#define ADD_NODE(DPORT, DADDR, SPORT, SADDR, HAS_SYN, BUF, IPH, TCPH, SHIFT) { \
   PList *new; \
   if (!cache_size) { \
     EXPAND_CACHE; \
   } \
-  new = cache->next; \
-  cache->next = cache->next->next; \
-  --cache_size; \
-  ++curr_conn; \
-  new->prev = NULL; \
-  new->daddr = (DADDR); \
-  new->saddr = (SADDR); \
-  new->dport = (DPORT); \
-  new->sport = (SPORT); \
-  new->pkts[pkt_to] = 1; \
-  new->pkts[pkt_from] = 0; \
-  new->dlen = 0; \
-  new->caught_late = (LATE); \
-  memset (new->data, 0, sizeof (UDATA) * maxdata); \
-  time (&new->stime); \
-  new->timeout = new->stime; \
-  if (!ports[(DPORT)].next) { \
-    new->next = NULL; \
-    ports[(DPORT)].next = new; \
+  if (cache_size) { \
+    new = cache->next; \
+    cache->next = cache->next->next; \
+    --cache_size; \
+    ++curr_conn; \
+    new->prev = NULL; \
+    new->daddr = (DADDR); \
+    new->saddr = (SADDR); \
+    new->dport = (DPORT); \
+    new->sport = (SPORT); \
+    new->pkts[pkt_to] = 1; \
+    new->pkts[pkt_from] = 0; \
+    new->dlen = 0; \
+    new->caught_syn = (HAS_SYN); \
+    memset (new->data, 0, sizeof (UDATA) * maxdata); \
+    time (&new->stime); \
+    new->timeout = new->stime; \
+    if (!ports[(DPORT)].next) { \
+      new->next = NULL; \
+      ports[(DPORT)].next = new; \
+    } else { \
+      ports[(DPORT)].next->prev = new; \
+      new->next = ports[(DPORT)].next; \
+      ports[(DPORT)].next = new; \
+    } \
+    ADD_DATA (new, (BUF), (IPH), (TCPH), (SHIFT)); \
   } else { \
-    ports[(DPORT)].next->prev = new; \
-    new->next = ports[(DPORT)].next; \
-    ports[(DPORT)].next = new; \
+    MENTION (DPORT, DADDR, SPORT, SADDR, "No memory; NOT MONITORING"); \
   } \
 }
 
