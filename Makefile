@@ -1,11 +1,14 @@
 # $Id$
+#
+# THIS MAKEFILE *REQUIRES* GNU MAKE!
+# ----------------------------------
 
 include .version
 
 # *DEFINE THE OS*
 OS	= linux
-#OS	= sunos		# Not done yet.
-#OS	= osf		# Not done yet.
+#OS	= sunos		# Works.
+#OS	= osf		# Works.
 
 # Set level of DEBUG.
 DEBUGS	= -DDEBUG
@@ -14,6 +17,8 @@ DEBUGS	= -DDEBUG
 DEFINES	= -D__USE_FIXED_PROTOTYPES__ -DIS_VERSION=\"$(IS_VERSION)\" \
 	  -DOSVER=\"$(OS)\"
 
+# THIS CODE HAS NOT BEEN TESTED UNDER ANY COMPILER OTHER THAN GCC!
+#
 # For normal use.
 CC	= gcc
 # Typical way to generate a.out binaries with an ELF-defaulting compiler.
