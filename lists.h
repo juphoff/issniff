@@ -28,7 +28,7 @@ enum { with_syn, without_syn, first_fin };
  * Major functionality is provided by these macros.
  */
 #define EXPAND_CACHE { \
-  UCHAR *blk; \
+  UCHAR *blk = NULL; \
   int i; \
   PList *cnode = cache; \
   if (!(blk = (UCHAR *)malloc ((sizeof (PList) + sizeof (UDATA) * maxdata) * \
@@ -46,7 +46,7 @@ enum { with_syn, without_syn, first_fin };
 }
 
 #define END_NODE(NODE, PORT, REASON) { \
-  dump_node((NODE), (REASON)); \
+  dump_node ((NODE), (REASON)); \
   if ((NODE)->next) { \
     (NODE)->next->prev = (NODE)->prev; \
   } \
@@ -78,7 +78,7 @@ enum { with_syn, without_syn, first_fin };
 }
 
 #define ADD_NODE(DPORT, DADDR, SPORT, SADDR, HAS_SYN, BUF, IPH, TCPH, SHIFT) { \
-  PList *new; \
+  PList *new = NULL; \
   if (!cache_size) { \
     EXPAND_CACHE; \
   } \
