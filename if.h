@@ -12,16 +12,20 @@ extern char *if_detect (int);
 #ifdef __linux__
 # include <net/if.h>
 # include <linux/if_ether.h>
-#endif
+#endif /* __linux__ */
 
 #ifdef __sun__
 # include <net/if.h>
 # include <netinet/in_systm.h>
 # include <netinet/in.h>
 # include <netinet/if_ether.h>
+# ifdef __svr4__ /* Solaris (SunOS 5). */
+#  include <sys/sockio.h>
+# else /* SunOS 4. */
 
 extern int ioctl (int, int, caddr_t);
-#endif
+# endif /* __svr4__ */
+#endif /* __sun__ */
 
 #ifdef __osf__
 # include <sys/mbuf.h>
@@ -33,4 +37,4 @@ extern int ioctl (int, int, caddr_t);
 # include <netinet/if_ether.h>
 
 extern int ioctl (int, int, ...);
-#endif
+#endif /* __osf__ */
