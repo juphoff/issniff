@@ -1,4 +1,4 @@
-/* sunos.h,v 2.3 1996/06/06 22:02:08 juphoff Exp */
+/* $Id$ */
 
 #include <errno.h>
 #include <sys/types.h>
@@ -41,6 +41,8 @@
 #define DPORT(X) ((X)->th_dport)
 #define DOFF(X) ((X)->th_off * 4)
 #define SYN(X) ((X)->th_flags & TH_SYN)
+#define FIN(X) ((X)->th_flags & TH_FIN)
+#define RST(X) ((X)->th_flags & TH_RST)
 #define FINRST(X) ((X)->th_flags & (TH_FIN | TH_RST))
 
 /*
