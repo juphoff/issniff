@@ -19,13 +19,9 @@
  */
 extern char *if_getname (void);
 extern int if_setname (const char *);
-extern void filter (UCHAR *);
-extern void if_close (int);
-extern void if_open (int);
-extern void if_read (void);
-
-/*
- * Misc. macros.
- */
-#define CHKOPT(FALLBACK) (atoi (optarg) ? atoi (optarg) : (FALLBACK))
-#define YN(X) ((X) ? "yes" : "no")
+extern void if_close_net (int);
+extern void if_open_net (int);
+extern void if_read_ip (void (*) (UCHAR *, int));
+#if 0
+extern void if_read_ip_raw (void (*) (UCHAR *, int));
+#endif
