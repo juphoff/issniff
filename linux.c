@@ -74,9 +74,10 @@ if_setname (const char *interface)
 }
 
 void
-if_open (void)
+if_open (int nolocal)
 {
-  if ((iface = socket (AF_INET, SOCK_PACKET, SOCKPROT)) == -1) {
+  if ((iface = socket (AF_INET, SOCK_PACKET,
+		       ntohs (nolocal ? ETH_P_IP : ETH_P_ALL))) == -1) {
     perror ("socket");
     exit (errno);
   }
