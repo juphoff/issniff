@@ -48,16 +48,19 @@ if_close (int sig)
     perror ("ioctl (SIOCSIFFLAGS)");
     exit (errno);
   }
+  close (iface);
   fprintf (stderr, "Interface %s shut down; signal %d.\n", ifr.ifr_name, sig);
   exit (0);
 }
 
+/* Consolidate. */
 char *
 if_getname (void)
 {
   return ifr.ifr_name;
 }
 
+/* Consolidate. */
 int
 if_setname (const char *interface)
 {
@@ -105,8 +108,13 @@ if_open (int nolocal)
     exit (errno);
   }
   fprintf (stderr, "Version %s listening on %s.\n\n", IS_VERSION, ifr.ifr_name);
+
+  if (nolocal) {
+    fprintf (stderr, "Warning: locally-originating packets not monitored!\n\n");
+  }
 }
 
+/* Consolidate. */
 static char *
 if_detect (void)
 {
