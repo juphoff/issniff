@@ -16,8 +16,8 @@ typedef struct PList {
 
 /* Simple rough hash. */
 typedef struct Ports {
-  short int port;
-  short int twoway;
+  PORT_T port;
+  int twoway;
   PList *next;
 } Ports;
 
@@ -31,6 +31,7 @@ enum { with_syn, without_syn, first_fin };
   UCHAR *blk = NULL; \
   int i; \
   PList *cnode = cache; \
+/*   sigprocmask (SIG_SETMASK, &blockset, &storeset); \ */ \
   if (!(blk = (UCHAR *)malloc ((sizeof (PList) + sizeof (UDATA) * maxdata) * \
 			       cache_increment))) { \
     perror ("** malloc"); 	/* Not fatal, though recovery is untested! */ \
@@ -40,9 +41,11 @@ enum { with_syn, without_syn, first_fin };
       cnode->next->data = (UDATA *)(blk += sizeof (PList)); \
       cnode = cnode->next; \
     } \
+/*    cnode->next = NULL; */ /* Ummm? */ \
     cache_max += cache_increment; \
     cache_size += cache_increment; \
   } \
+/*   sigprocmask (SIG_SETMASK, &storeset, NULL); \ */ \
 }
 
 /*
@@ -87,7 +90,7 @@ enum { with_syn, without_syn, first_fin };
     ++stats[s_maxdata]; \
     END_NODE ((NODE), (NODE)->dport, "MAXDATA"); \
   } else { \
-    time (&(NODE)->timeout); \
+    time (&(NODE)->timeout);	/* Need to handle files with timestamps */ \
   } \
 }
 
@@ -112,7 +115,7 @@ enum { with_syn, without_syn, first_fin };
     new->dlen = 0; \
     new->caught_syn = (HAS_SYN); \
     memset (new->data, 0, sizeof (UDATA) * maxdata); \
-    time (&new->stime); \
+    time (&new->stime);		/* Need hack for file reads with timestamps */ \
     new->timeout = new->stime; \
     if (!ports[(DPORT)].next) { \
       new->next = NULL; \
