@@ -1,6 +1,6 @@
 .\" -*- nroff -*-
 .\" $Id$
-.TH issniff 8 "24 June 1996" "Version @@IS_VERSION@@" "NRAO"
+.TH issniff 8 "5 July 1996" "Version @@IS_VERSION@@" "NRAO"
 .SH NAME
 issniff \- Industrial Strength SNIFFer
 .SH SYNOPSIS
@@ -24,6 +24,11 @@ the data collected during the duration of the connection is printed to
 and ports involved, time-stamps, packet counts, bytes, and the reason
 for data-collection termination.
 .SH OPTIONS
+.TP
+.B -a
+Track all connections--even those for which no \fISYN\fR packet was
+seen--allowing monitoring of already-established connections.  (Doesn't
+work correctly yet; still a "stub.")
 .TP
 .BI -c \ cache_increment
 The number of connection entries to expand the data cache by when an
