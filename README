@@ -1,15 +1,16 @@
 Basic:
 
+Allow catching connections "late" meaning that the SYN packet(s) were
+not seen.  This would allow "pickup" of already-established connections
+at runtime.  (Partially implemented.)
+
 Allow run-time selection of what addresses to monitor, and (eventual)
 optional specification of a tty for each address' data to be printed on.
 
-Allow catching connections "late" meaning that the SYN packet(s) were
-not seen.  This would allow "pickup" of already-established connections
-at runtime.
-
 Allow run-time selection of what destination (only) ports to monitor,
 and optional specification of a tty for each port's data to be printed
-on.  (The tty bit is not yet supported.)
+on.  (The tty bit is not yet supported, and may not be for some time;
+I've got bigger fish to fry right now.)
 
 The tty-per-port and tty-per-address options will probably be mutually
 exclusive, at least initially.
@@ -25,14 +26,18 @@ catch-all for the entire class C address space on that network.
 
 Eventual:
 
-Tty's will be written to by fork()'d processes that will have the data
-passed to them by the "master" sniffer via IPC of some sort (most likely
-shared memory).  This keeps the master in the read() loop as much as
-possible.
+Tty's/filters will be written to by fork()'d processes that will have
+the data passed to them by the "master" sniffer via IPC of some sort
+(most likely shared memory).  This keeps the master in the read() loop
+as much as possible, which is critical under Linux [see next note].
 
-Real-time remote transfer of the sniffed data via some sort of encrypted
-network channel.
+A real-time (packet-by-packet), switchable, etc., ncurses-based
+front-end for flexibility.
 
 Add a bpf-like module to Linux to keep at least the high-level filtering
 in the kernel and away from userland.  Already discussed this with Alan
-Cox, who likes the idea.
+Cox, who likes the idea.  It will also provide buffering, which is
+sorely needed under Linux to prevent "missing" packets.
+
+Real-time remote transfer of the sniffed data via some sort of encrypted
+network channel.
