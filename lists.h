@@ -103,7 +103,6 @@ enum { pkt_to, pkt_from };
     new->next = ports[(DPORT)].next; \
     ports[(DPORT)].next = new; \
   } \
-  ++stats[s_tot]; \
 }
 
 #define MENTION(DPORT, DADDR, SPORT, SADDR, MSG) { \
