@@ -1,6 +1,6 @@
 .\" -*- nroff -*-
 .\" $Id$
-.TH issniff 8 "15 August 1996" "Version @@IS_VERSION@@" "NRAO/AUI"
+.TH issniff 8 "16 August 1996" "Version @@IS_VERSION@@" "NRAO/AUI"
 .SH NAME
 issniff \- Industrial Strength SNIFFer
 .SH SYNOPSIS
@@ -12,7 +12,8 @@ issniff
 into "promiscuous" mode and monitors the network traffic visible to that
 interface, collecting data on TCP-protocol network connections to the
 destination port(s) selected on the command line.  Alternatively,
-packets may be read from a local packet-dump file created by 'tcpdump'.
+packets may be read from a local packet-dump file created by 'tcpdump',
+or from a pipe from 'tcpdump'.
 .sp
 At least one port must be specified.  A '+' prefix on a port number
 means to monitor traffic in both directions on connections to that port.
@@ -102,6 +103,9 @@ Verbose mode.  Output one-line descriptions of new connections to
 Take packet input from a packet-dump file written by 'tcpdump -w', vice
 from a "real-time" network interface.  (Still under development; only
 works under Linux so far.)
+.sp
+A \fIfilename\fR of - means to read input from stdin, as via a pipe from
+a 'tcpdump -w -' command.
 .TP
 .B -C
 Colorize output, with color selection based on the travel direction of
