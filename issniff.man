@@ -70,6 +70,11 @@ Send output to both \fIfilename\fR and standard output.  Verbose
 commentary messages--normally sent to standard error--will not be
 written to this file.  (See also \fB-o\fR.)
 .TP
+.B -r
+"Real-time" mode.  Sniffer detaches from tty and uses shared memory to
+communicate with an interactive ncurses-based front-end.  (Not yet
+implemented!)
+.TP
 .B -s
 "Squash" output.  Consecutive carriage-returns/newlines in the collected
 data will be replaced by a single newline in the printed output.
