@@ -11,6 +11,7 @@ typedef struct PList {
   UDATA *data;			/* 2:1 byte ratio for data; gives direction. */
   UINT dlen, pkts[2];
   time_t stime, timeout;
+  int caught_late;
 } PList;
 
 /* Pseudo-hash. */
@@ -75,7 +76,7 @@ enum { pkt_to, pkt_from };
   } \
 }
 
-#define ADD_NODE(DPORT, DADDR, SPORT, SADDR) { \
+#define ADD_NODE(DPORT, DADDR, SPORT, SADDR, LATE) { \
   PList *new; \
   if (!cache_size) { \
     EXPAND_CACHE; \
@@ -92,6 +93,7 @@ enum { pkt_to, pkt_from };
   new->pkts[pkt_to] = 1; \
   new->pkts[pkt_from] = 0; \
   new->dlen = 0; \
+  new->caught_late = (LATE); \
   memset (new->data, 0, sizeof (UDATA) * maxdata); \
   time (&new->stime); \
   new->timeout = new->stime; \
