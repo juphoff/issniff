@@ -48,8 +48,7 @@ static int non_tcp = 0;
  * Local function prototypes.
  */
 static void dump_conns (int);
-static void dump_node (const PList *, const char *);
-static void dump_node_out (const PList *, const char *, FILE *);
+static void dump_node (const PList *, const char *, FILE *);
 static void rt_filter (UCHAR *, int);
 #if 0
 static void sf_filter (UCHAR *, int);
@@ -89,7 +88,7 @@ dump_conns (int sig)
   for (i = 0; i <= hiport; i++) {
     if ((node = ports[i].next)) {
       while (node) {
-	dump_node (node, "SIGNAL");
+	DUMP_NODE (node, "SIGNAL");
 	node = node->next;
       }
     }
@@ -323,25 +322,12 @@ main (int argc, char **argv)
 }
 
 /*
- * This is inefficient (!), but a quick hack.  Things will change....
- */ 
-static void
-dump_node (const PList *node, const char *reason)
-{
-  if (of_methods & to_file)
-    dump_node_out (node, reason, of_p);
-
-  if (of_methods & to_stdout)
-    dump_node_out (node, reason, stdout);
-}
-
-/*
  * Will probably be moved to children and talked to via shared memory.
  *
  * Output of two-way monitoring when not colorizing looks ugly; needs work.
  */
 static void
-dump_node_out (const PList *node, const char *reason, FILE *fh)
+dump_node (const PList *node, const char *reason, FILE *fh)
 {
   UCHAR data, lastc = 0;
   char *timep = ctime (&node->stime);
