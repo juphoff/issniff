@@ -6,7 +6,7 @@
 #include <string.h>
 #include <time.h>
 /* These two swapped for Solaris. */
-#include OSVER".h"
+#include OSHEADER
 #include <arpa/inet.h>
 /* End swap. */
 #include "lists.h"

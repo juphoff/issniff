@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <net/if.h>
-#include OSVER".h"
+#include OSHEADER
 #include "sniff.h"
 #include "if.h"
 #include "pcap-tcpdump.h"

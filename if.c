@@ -8,7 +8,7 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include "if.h"
-#include "if_"OSVER".h"
+#include IFOSHEADER
 
 #define IF_DETECT_BUFSIZ 1024	/* Big enough for ~25 interfaces + slop. */
 
