@@ -202,7 +202,7 @@ find_node (PORT_T dport, ADDR_T daddr, PORT_T sport, ADDR_T saddr)
       return node;
     }
     /* Timeout stanza. */
-    if (timeout && (now - node->timeout > timeout)) {
+    if (timeout && node->timeout && (now - node->timeout > timeout)) {
       PList *nnode = node->next;
       ++stats[s_timeout];
       END_NODE (node, dport, "TIMEOUT");
