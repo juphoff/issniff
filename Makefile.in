@@ -11,12 +11,13 @@ include .version
 #DEBUG_WFLAGS = -pedantic -Wmissing-prototypes
 
 # OS-specific defines.
+#DEFINES_linux	= -DSUPPORT_TCPDUMP -DOSHEADER=\"linux.h\" -DIFOSHEADER=\"if_linux.h\"
 DEFINES_linux	= -DSUPPORT_TCPDUMP
 DEFINES_sunos	= -D__USE_FIXED_PROTOTYPES__
 DEFINES_solaris	= -D__EXTENSIONS__
 
 # General definitions.
-DEFINES	= $(DEFINES_@this_os@) -DIS_VERSION=\"$(IS_VERSION)\" -DOSVER=\"@this_os@\"
+DEFINES	= $(DEFINES_@this_os@) -DIS_VERSION=\"$(IS_VERSION)\" -DOSHEADER=\"@this_os@.h\" -DIFOSHEADER=\"if_@this_os@.h\"
 
 # The Ted Ts'o express.  Noisy under some OS's.  Very gcc-specific.
 WFLAGS	= -Wall -Wcast-align -Wcast-qual -Winline -Wnested-externs \
