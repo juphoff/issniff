@@ -5,6 +5,8 @@ AC_CONFIG_HEADER(config.h)
 
 AC_CANONICAL_HOST
 
+## Check for programs.
+
 AC_CHECK_PROG(GMAKE, gmake, gmake, no)
 if test $GMAKE != gmake; then
    AC_MSG_ERROR(This program currently _requires_ gmake)
@@ -17,10 +19,23 @@ fi
 
 AC_PROG_CPP
 
-#AC_CHECK_HEADERS(unistd.h)
+## Check for libraries.
 
-AC_CHECK_LIB(socket,main)
-AC_CHECK_LIB(nsl,main)
+AC_CHECK_LIB(socket, socket)
+#AC_CHECK_LIB(socket, socket,,, -lnsl)
+# Don't really want to look for main here...find something better.
+#AC_CHECK_LIB(nsl, main)
+
+## Check for header files.
+
+## Check for typedefs.
+
+AC_CHECK_TYPE(u_int32_t, __u32)
+
+## Check for structures.
+## Check for compiler characteristics.
+## Check for library functions.
+## Check for system services.
 
 this_os=`echo $host_os | sed 's/[[.0-9]]*//g'`
 echo Building for $this_os
