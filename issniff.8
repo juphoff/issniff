@@ -1,6 +1,6 @@
 .\" -*- nroff -*-
 .\" $Id$
-.TH issniff 8 "24 May 1996" "Version 0.2" "NRAO"
+.TH issniff 8 "24 May 1996" "Version 0.3" "NRAO"
 .SH NAME
 issniff \- Industrial Strength SNIFFer
 .SH SYNOPSIS
@@ -92,8 +92,9 @@ Exit immediately, with no output.  Turns off promiscuous mode.
 .B KILL
 Do \fBnot\fR send a \fISIGKILL\fR to \fBissniff\fR; doing so will leave
 the network interface it was monitoring in promiscuous mode.
-\fBissniff\fR will exit cleanly on a \fISIGINT\fR, \fISIGQUIT\fR, or a
-\fISIGTERM\fR.  (In fact, these are the only exit methods supported.)
+\fBissniff\fR exits cleanly on: \fISIGINT\fR, \fISIGHUP\fR,
+\fISIGQUIT\fR, and \fISIGTERM\fR.  (In fact, these are the only exit
+methods supported.)
 .SH BUGS
 None known; however, some features and options have not yet been
 implemented.
@@ -104,10 +105,6 @@ electronic signature, respectively, is required for legal possession
 and/or use of \fBissniff\fR.  Redistribution in any form is not
 permitted, under any circumstances, without explicit permission in one
 of the aforementioned forms.
-.sp
-United States federal agencies (e.g. law enforcement, military) may
-investigate the illegal possession and/or use of this code and/or
-documentation.
 .sp
 This code and documentation is Copyright (C) 1996, Jeffrey A. Uphoff.
 All rights reserved.
