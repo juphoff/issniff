@@ -1,6 +1,6 @@
 .\" -*- nroff -*-
 .\" $Id$
-.TH issniff 8 "5 July 1996" "Version @@IS_VERSION@@" "NRAO"
+.TH issniff 8 "12 July 1996" "Version @@IS_VERSION@@" "NRAO/AUI"
 .SH NAME
 issniff \- Industrial Strength SNIFFer
 .SH SYNOPSIS
@@ -59,6 +59,16 @@ it, currently Linux and OSF/1; this option has no effect under SunOS.)
 .sp
 Note that under OSF/1 this option will also disable the monitoring of
 \fBincoming\fR packets to the local host.
+.TP
+.BI -o \ filename
+Send output to \fIfilename\fR.  Verbose commentary messages--normally
+sent to standard error--will not be written to this file.  (See also
+\fB-O\fR.)
+.TP
+.BI -O \ filename
+Send output to both \fIfilename\fR and standard output.  Verbose
+commentary messages--normally sent to standard error--will not be
+written to this file.  (See also \fB-o\fR.)
 .TP
 .B -s
 "Squash" output.  Consecutive carriage-returns/newlines in the collected
@@ -146,6 +156,8 @@ OS's.  \fBissniff\fR exits cleanly on: \fISIGINT\fR, \fISIGQUIT\fR, and
 \fISIGTERM\fR.  (In fact, these are the only exit methods supported.)
 .SH BUGS
 Slight flakiness in the signal-handling, which needs a rewrite.
+.sp
+OSF/1 (Digital UNIX) seems to be garbling a bit.  Investigating.
 .SH NOTE
 Some features and/or options have not yet been implemented.
 \fBissniff\fR has been tested under:
