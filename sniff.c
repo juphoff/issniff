@@ -1,6 +1,7 @@
 /* $Id$ */
 
 #include <ctype.h>
+#include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,6 +16,9 @@
 /*
  * Local variables.
  */
+#if 0
+static char of_name[NAME_MAX];
+#endif
 static int cache_increment = CACHE_INC;
 static int cache_max = 0;
 static int cache_size = 0;
@@ -31,7 +35,6 @@ static int verbose = 0;
 static PList *cache;
 static Ports *ports;
 static int stats[] = { 0, 0, 0 };
-
 enum { s_finrst, s_maxdata, s_timeout };
 
 #if defined(DEBUG) && defined(USING_BPF)
@@ -43,9 +46,29 @@ static int non_tcp = 0;
  */
 static void dump_conns (int);
 static void dump_node (const PList *, const char *);
+static void rt_filter (UCHAR *, int);
+#if 0
+static void sf_filter (UCHAR *, int);
+#endif
 static void show_conns (int);
 static void show_state (int);
 static PList *find_node (PORT_T, ADDR_T, PORT_T, ADDR_T);
+
+/*
+ * Misc. local macros.
+ */
+#define CHKOPT(FALLBACK) (atoi (optarg) ? atoi (optarg) : (FALLBACK))
+#define YN(X) ((X) ? "yes" : "no")
+
+/*
+ * Jump!
+ *
+ * (Default settings.)
+ */
+static void (*filter) (UCHAR *, int) = rt_filter;
+static void (*if_close) (int) = if_close_net;
+static void (*if_open) (int) = if_open_net;
+static void (*if_read) (void (*) (UCHAR *, int)) = if_read_ip;
 
 /*
  * Signal handler.
@@ -70,7 +93,7 @@ dump_conns (int sig)
   if (sig == SIGHUP) {
     return;
   }
-  if_close (sig);
+  (*if_close) (sig);
 }
 
 /*
@@ -188,83 +211,18 @@ find_node (PORT_T dport, ADDR_T daddr, PORT_T sport, ADDR_T saddr)
   return node;
 }
 
-/*
- * Finds the packets we're interested in and does fun things with them.
- * Made more complicated by adding two-way monitoring capabilities on
- * selectable ports.
- *
- * Need to check FIN/RST packets from remote end (e.g. connection
- * refused), even when not in two-way mode.
- */
-void
-filter (UCHAR *buf)
-{
-  enum { data_to = 0, data_from = 8 };
-  IPhdr *iph = (IPhdr *)buf;
-
-#if defined(DEBUG) || !defined(USING_BPF)
-  if (IPPROT (iph) != TCPPROT) { /* Only looking at TCP/IP right now. */
-# ifdef USING_BPF
-    fprintf (stderr, "*** A non-TCP packet snuck through the filter!\n");
-    ++non_tcp;
-# endif /* USING_BPF */
-    return;
-  } else {
-#endif /* DEBUG || !USING_BPF */
-    TCPhdr *tcph = (TCPhdr *)(buf + IPHLEN (iph));
-    PORT_T dport = ntohs (DPORT (tcph)), sport = ntohs (SPORT (tcph));
-
-    if (dport > hiport || !ports[dport].port) {
-      if (sport <= hiport && ports[sport].twoway) {
-	ADDR_T daddr = DADDR (iph), saddr = SADDR (iph);
-	PList *node = find_node (sport, saddr, dport, daddr); /* Backwards. */
-
-	if (node) {
-	  ++node->pkts[pkt_from];
-	  ADD_DATA (node, buf + IPHLEN (iph) + DOFF (tcph), iph, tcph,
-		    data_from);
-
-	  if (FINRST (tcph)) {
-	    ++stats[s_finrst];
-	    END_NODE (node, sport, "<-FIN/RST");
-	  }
-	}
-      }
-    } else {
-      ADDR_T daddr = DADDR (iph), saddr = SADDR (iph);
-      PList *node = find_node (dport, daddr, sport, saddr);
-
-      if (!node) {
-	if (SYN (tcph)) {
-	  ADD_NODE (dport, daddr, sport, saddr);
-
-	  if (verbose) {
-	    MENTION (dport, daddr, sport, saddr, "New connection");
-	  }
-	}
-      } else {
-	++node->pkts[pkt_to];
-	ADD_DATA (node, buf + IPHLEN (iph) + DOFF (tcph), iph, tcph, data_to);
-
-	if (FINRST (tcph)) {
-	  ++stats[s_finrst];
-	  END_NODE (node, dport, "FIN/RST->");
-	}
-      }
-    }
-#if defined(DEBUG) || !defined(USING_BPF)
-  }
-#endif /* DEBUG || !USING_BPF */
-}
-
 int
 main (int argc, char **argv)
 {
   if (argc > 1) {
     char opt;
     int i;
-    
+
+#if 0    
+    while ((opt = getopt (argc, argv, "F:T:c:d:i:o:t:Cnsv")) != -1) {
+#else
     while ((opt = getopt (argc, argv, "F:T:c:d:i:t:Cnsv")) != -1) {
+#endif
       switch (opt) {
       case 'C':
 	colorize = 1;
@@ -290,8 +248,16 @@ main (int argc, char **argv)
 	}
 	break;
       case 'n':
-	nolocal = 1;		/* Option only matters for Linux right now. */
+	nolocal = 1;
 	break;
+	/* Under construction. */
+#if 0
+      case 'o':
+	filter = sf_filter;
+/* 	if_read = if_read_ip_raw; */
+	strncpy (of_name, optarg, NAME_MAX);
+	break;
+#endif
       case 's':
 	squash_output = 1;
 	break;
@@ -310,7 +276,7 @@ main (int argc, char **argv)
       int thisport = argv[i][0] == '+' ? atoi (&argv[i][1]) : atoi (argv[i]);
       hiport = thisport > hiport ? thisport : hiport;
     }
-    /* Yes, wasting some memory for the sake of speed. */
+    /* Yes, wasting some (lots at times) memory for the sake of speed. */
     if (!(ports = (Ports *)malloc (sizeof (Ports) * (hiport + 1)))) {
       perror ("malloc");
       exit (errno);
@@ -326,9 +292,9 @@ main (int argc, char **argv)
     fputs ("Must specify some ports!\n", stderr);
     return 1;
   }
-  if_open (nolocal);
-  signal (SIGQUIT, if_close);
-  signal (SIGTERM, if_close);
+  (*if_open) (nolocal);
+  signal (SIGQUIT, *if_close);
+  signal (SIGTERM, *if_close);
   /* Initialize cache. */
   if (!(cache = (PList *)malloc (sizeof (PList)))) {
     perror ("malloc");
@@ -340,13 +306,15 @@ main (int argc, char **argv)
   signal (SIGHUP, dump_conns);
   signal (SIGUSR1, show_state);
   signal (SIGUSR2, show_conns);
-  if_read ();			/* Main loop. */
-  if_close (0);			/* Not reached. */
-  return 0;
+  (*if_read) (*filter);		/* Main loop. */
+  (*if_close) (0);		/* Not reached. */
+  return -1;
 }
 
 /*
  * Will probably be moved to children.
+ *
+ * Output of two-way monitoring when not colorizing looks ugly; needs work.
  */
 static void
 dump_node (const PList *node, const char *reason)
@@ -377,14 +345,24 @@ dump_node (const PList *node, const char *reason)
     if (*datp > 0x00ff) {
       data = *datp++ >> 8;
 
-      if (colorize && current_color != colorfrom) {
-	printf ("%c[%dm", 0x1b, current_color = colorfrom);
+      if (current_color != colorfrom) {
+	if (colorize) {
+	  printf ("%c[%dm", 0x1b, current_color = colorfrom);
+	} else {
+	  fputs ("\n<| ", stdout);
+	  current_color = colorfrom;
+	}
       }
     } else {
       data = *datp++;
 
-      if (colorize && current_color != colorto) {
-	printf ("%c[%dm", 0x1b, current_color = colorto);
+      if (current_color != colorto) {
+	if (colorize) {
+	  printf ("%c[%dm", 0x1b, current_color = colorto);
+	} else {
+	  fputs ("\n>| ", stdout);
+	  current_color = colorto;
+	}
       }
     }
     if (data >= 127) {
@@ -399,9 +377,13 @@ dump_node (const PList *node, const char *reason)
 	}
       case '\r':
       case '\n':
-	/* Can't tell which end a \n came from either. */
+	/* Can't tell which end a \n came from when colorizing. */
 	if (!squash_output || !((lastc == '\r') || (lastc == '\n'))) {
-	  putchar ('\n');
+	  if (!colorize && ports[node->dport].twoway) {
+	    fputs ("\n | ", stdout);
+	  } else {
+	    putchar ('\n');
+	  }
 	}
 	break;
       case '\t':
@@ -420,3 +402,109 @@ dump_node (const PList *node, const char *reason)
   }
   puts ("\n========================================================================");
 }
+
+
+/*
+ * Various filtering routines.  Should probably be moved to a separate
+ * file, perhaps to a library for use in other related app's that I'm
+ * likely to hack out.
+ */
+
+/*
+ * "Real-time" filter.
+ *
+ * Finds the packets we're interested in and does fun things with them.
+ *
+ * Need to check FIN/RST packets from remote end (e.g. connection
+ * refused), even when not in two-way mode.
+ */
+static void
+rt_filter (UCHAR *buf, int len)
+{
+  enum { data_to = 0, data_from = 8 };
+  IPhdr *iph = (IPhdr *)buf;
+
+#if defined(DEBUG) || !defined(USING_BPF)
+  if (IPPROT (iph) != TCPPROT) { /* Only looking at TCP/IP right now. */
+# ifdef USING_BPF
+    fprintf (stderr, "*** A non-TCP packet snuck through the filter!\n");
+    ++non_tcp;
+# endif /* USING_BPF */
+    return;
+  } else {
+#endif /* DEBUG || !USING_BPF */
+    TCPhdr *tcph = (TCPhdr *)&buf[IPHLEN (iph)];
+    PORT_T dport = ntohs (DPORT (tcph)), sport = ntohs (SPORT (tcph));
+
+    if (dport > hiport || !ports[dport].port) {
+      if (sport <= hiport && ports[sport].twoway) {
+	ADDR_T daddr = DADDR (iph), saddr = SADDR (iph);
+	PList *node = find_node (sport, saddr, dport, daddr); /* Backwards. */
+
+	if (node) {
+	  ++node->pkts[pkt_from];
+	  ADD_DATA (node, &buf[IPHLEN (iph) + DOFF (tcph)], iph, tcph,
+		    data_from);
+
+	  if (FINRST (tcph)) {
+	    ++stats[s_finrst];
+	    END_NODE (node, sport, "<-FIN/RST");
+	  }
+	}
+      }
+    } else {
+      ADDR_T daddr = DADDR (iph), saddr = SADDR (iph);
+      PList *node = find_node (dport, daddr, sport, saddr);
+
+      if (!node) {
+	if (SYN (tcph)) {
+	  ADD_NODE (dport, daddr, sport, saddr);
+
+	  if (verbose) {
+	    MENTION (dport, daddr, sport, saddr, "New connection");
+	  }
+	}
+      } else {
+	++node->pkts[pkt_to];
+	ADD_DATA (node, &buf[IPHLEN (iph) + DOFF (tcph)], iph, tcph, data_to);
+
+	if (FINRST (tcph)) {
+	  ++stats[s_finrst];
+	  END_NODE (node, dport, "FIN/RST->");
+	}
+      }
+    }
+#if defined(DEBUG) || !defined(USING_BPF)
+  }
+#endif /* DEBUG || !USING_BPF */
+}
+
+/*
+ * "Save-file" filter.
+ */
+#if 0
+static void
+sf_filter (UCHAR *buf, int len)
+{
+  static int of_fd;
+  IPhdr *iph = (IPhdr *)buf;
+
+  if (!of_fd) {		/* Move this--don't want in loop! */
+    if ((of_fd = open (of_name, O_CREAT | O_EXCL | O_WRONLY, 0600)) < 0) {
+      int err = errno;
+
+      perror ("open");
+      (*if_close) (0);
+      exit (err);
+    }
+  }
+  if (IPPROT (iph) != TCPPROT) {
+    return;
+  } else {
+    printf ("about to write\n");
+    if (write (of_fd, &buf, len) != len) {
+      perror ("write");
+    }
+  }
+}
+#endif
