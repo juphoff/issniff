@@ -2,7 +2,7 @@ Basic:
 
 Allow run-time selection of what destination (only) ports to monitor,
 and optional specification of a tty for each port's data to be printed
-on.
+on.  The tty bit is not yet supported.
 
 
 Later:
@@ -25,4 +25,3 @@ Tty's will be written to by fork()'d processes that will have the data
 passed to them by the "master" sniffer via IPC of some sort (most likely
 shared memory).  This keeps the master in the read() loop as much as
 possible.
-
