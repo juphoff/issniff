@@ -80,8 +80,6 @@ if_open_net (int nolocal)
 
 /*
  * Mainly here for portability since other OS's buffer the sniffing.
- * (Linux will too, once I write that kernel module...just give me some
- * time.)
  */
 void
 if_read_ip_net (void (*filter) (UCHAR *, int))
