@@ -21,27 +21,30 @@ static int iface;
  * Signal handler.
  */
 void
-if_close (int sig)
+if_close_net (int sig)
 {
   ifr.ifr_flags &= ~IFF_PROMISC;
 
-  if (ioctl (iface, SIOCSIFFLAGS, &ifr) == -1) {
+  if (ioctl (iface, SIOCSIFFLAGS, &ifr) < 0) {
     perror ("ioctl (SIOCSIFFLAGS)");
     exit (errno);
   }
   close (iface);
   fprintf (stderr, "Interface %s shut down; signal %d.\n", ifr.ifr_name, sig);
-  exit (0);
+
+  if (sig) {
+    exit (0);
+  }
 }
 
 /*
  * Linux is easy.
  */
 void
-if_open (int nolocal)
+if_open_net (int nolocal)
 {
   if ((iface = socket (AF_INET, SOCK_PACKET,
-		       ntohs (nolocal ? ETH_P_IP : ETH_P_ALL))) == -1) {
+		       ntohs (nolocal ? ETH_P_IP : ETH_P_ALL))) < 0) {
     perror ("socket");
     exit (errno);
   }
@@ -54,7 +57,7 @@ if_open (int nolocal)
     }
     assert (if_setname (interface) == 0);
   }
-  if (ioctl (iface, SIOCGIFFLAGS, &ifr) == -1) {
+  if (ioctl (iface, SIOCGIFFLAGS, &ifr) < 0) {
     perror ("ioctl (SIOCGIFFLAGS)");
     exit (errno);
   }
@@ -64,7 +67,7 @@ if_open (int nolocal)
   }
   ifr.ifr_flags |= IFF_PROMISC;
 
-  if (ioctl (iface, SIOCSIFFLAGS, &ifr) == -1) {
+  if (ioctl (iface, SIOCSIFFLAGS, &ifr) < 0) {
     perror ("ioctl (SIOCSIFFLAGS)");
     exit (errno);
   }
@@ -79,13 +82,33 @@ if_open (int nolocal)
  * Mainly here for portability since other OS's buffer the sniffing.
  */
 void
-if_read (void)
+if_read_ip (void (*filter) (UCHAR *, int))
 {
+  int bytes;
   UCHAR buf[IF_BUFSIZ];
 
   for (;;) {
-    if (read (iface, buf, IF_BUFSIZ) >= 0) {
-      filter (buf + linkhdr_len); /* Function call, over and over and over. */
+    if ((bytes = read (iface, buf, IF_BUFSIZ)) >= 0) {
+      if (ETHTYPE ((ETHhdr *)buf) == IPTYPE) {
+	(*filter) (&buf[linkhdr_len], bytes - linkhdr_len);
+      }
     }
   }
 }
+
+#if 0
+void
+if_read_ip_raw (void (*filter) (UCHAR *, int))
+{
+  int bytes;
+  UCHAR buf[IF_BUFSIZ];
+
+  for (;;) {
+    if ((bytes = read (iface, buf, IF_BUFSIZ)) >= 0) {
+      if (ETHTYPE ((ETHhdr *)buf) == IPTYPE) {
+	(*filter) (buf, bytes);
+      }
+    }
+  }
+}
+#endif
