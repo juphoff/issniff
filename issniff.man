@@ -1,6 +1,6 @@
 .\" -*- nroff -*-
 .\" $Id$
-.TH issniff 8 "3 June 1996" "Version @@IS_VERSION@@" "NRAO"
+.TH issniff 8 "6 June 1996" "Version @@IS_VERSION@@" "NRAO"
 .SH NAME
 issniff \- Industrial Strength SNIFFer
 .SH SYNOPSIS
@@ -138,15 +138,14 @@ the network interface it was monitoring in promiscuous mode on some
 OS's.  \fBissniff\fR exits cleanly on: \fISIGINT\fR, \fISIGQUIT\fR, and
 \fISIGTERM\fR.  (In fact, these are the only exit methods supported.)
 .SH BUGS
-None known; however, some features and/or options have not yet been
-implemented, especially under OS's other than Linux.  \fBissniff\fR has
-been tested under:
+Slight flakiness in the signal-handling, which needs rewriting.
+.SH NOTE
+Some features and/or options have not yet been implemented, especially
+under OS's other than Linux.  \fBissniff\fR has been tested under:
 .sp
 Linux: 1.2.13, 1.99.x.
 .br
 SunOS: 4.1.2.
-.SH NOTE
-The signal-handling could use some work.
 .SH REDISTRIBUTION TERMS
 Explicit permission, in the form of a personally-addressed written
 document or electronic mail message bearing either my written or
