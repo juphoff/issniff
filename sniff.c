@@ -31,7 +31,6 @@ static int verbose = 0;
 static PList *cache;
 static Ports *ports;
 
-static void expand_cache (void);
 static void dump_conns (int);
 static void dump_node (const PList *, const char *);
 static void dump_state (int);
@@ -74,7 +73,7 @@ dump_state (int sig)
 {
   int i;
 
-  signal (SIGUSR1, dump_state);
+  signal (sig, dump_state);
   fprintf (stderr, "\n\
 ** Current state:\n\
 *  Interface: %s\n\
@@ -117,7 +116,7 @@ show_conns (int sig)
   int i;
   PList *node;
 
-  signal (SIGUSR2, show_conns);
+  signal (sig, show_conns);
   fputs ("\n** Active connections:\n", stderr);
 
   for (i = 0; i <= hiport; i++) {
@@ -132,36 +131,7 @@ show_conns (int sig)
   }
   fputc ('\n', stderr);
 }
-
-/*
- * Allocates in blocks.  May need to change somewhat for later
- * implementation of a cache management scheme.
- */
-static void
-expand_cache (void)
-{
-  int i;
-  UCHAR *dblk, *lblk;
-  PList *node = cache;
-
-  /* Consolidate?  Perhaps also make malloc() failures non-fatal here? */
-  if (!(lblk = (UCHAR *)malloc (sizeof (PList) * cache_increment))) {
-    perror ("malloc");
-    exit (errno);
-  }
-  if (!(dblk = (UCHAR *)malloc (sizeof (UCHAR) * cache_increment * maxdata))) {
-    perror ("malloc");
-    exit (errno);
-  }
-  for (i = 0; i < cache_increment; i++) {
-    node->next = (PList *)(lblk + sizeof (PList) * i);
-    node->next->data = dblk + sizeof (UCHAR) * i * maxdata;
-    node = node->next;
-  }
-  cache_max += cache_increment;
-  cache_size += cache_increment;
-}
-
+ 
 #if 0
 /*
  * Only used when cache management requested.
@@ -310,7 +280,7 @@ main (int argc, char **argv)
     exit (errno);
   }
   cache->next = NULL;
-  expand_cache ();		/* Get ready for first packet. */
+  EXPAND_CACHE;			/* Get ready for first packet. */
   signal (SIGINT, dump_conns);
   signal (SIGHUP, dump_conns);
   signal (SIGUSR1, dump_state);
