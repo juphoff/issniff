@@ -8,6 +8,7 @@
 #include "sniff.h"
 #include "shm.h"
 #include "filter.h"
+#include "misc.h"
 
 /*
  * Global variables.
@@ -143,7 +144,8 @@ show_state (int sig)
 *  Verbose mode: %s\n\
 *  Ted Turner mode (colorization): %s\n\
 *  Connection stats:\n\
-*    FIN/RST terminated: %d\n\
+*    FIN terminated: %d\n\
+*    RST terminated: %d\n\
 *    Exceeded data size: %d\n\
 *    Exceeded timeout:   %d\n",
 	   IS_VERSION,
@@ -159,7 +161,8 @@ show_state (int sig)
 	   YN (squash_output),
 	   YN (verbose),
 	   YN (colorize),
-	   stats[s_finrst],
+	   stats[s_fin],
+	   stats[s_rst],
 	   stats[s_maxdata],
 	   stats[s_timeout]);
 
