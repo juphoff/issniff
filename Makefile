@@ -1,8 +1,6 @@
-# Copyright (c) 1996 Jeffrey A. Uphoff
-#
-# ISSniff.  An Industrial-Strength Sniffer (eventually), primarily for Linux.
-#
 # $Id$
+
+include .version
 
 # *DEFINE THE OS*
 OS	= linux
@@ -12,7 +10,7 @@ OS	= linux
 DEBUGS	= -DDEBUG
 
 # General definitions.
-DEFINES	= -D__USE_FIXED_PROTOTYPES__
+DEFINES	= -D__USE_FIXED_PROTOTYPES__ -DIS_VERSION=\"$(IS_VERSION)\"
 
 # For normal use.
 CC	= gcc
