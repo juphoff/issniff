@@ -1,5 +1,9 @@
 /* $Id$ */
 
+/*
+ * Primary data structures.
+ */
+/* Connection data. */
 typedef struct PList {
   struct PList *next, *prev;
   ADDR_T daddr, saddr;
@@ -9,19 +13,25 @@ typedef struct PList {
   time_t stime, timeout;
 } PList;
 
+/* Pseudo-hash. */
 typedef struct Ports {
   int port;
   PList *next;
 } Ports;
 
+/*
+ * Major functionality is provided by these macros.
+ */
 #define END_NODE(NODE, PORT, REASON) { \
   dump_node((NODE), (REASON)); \
-  if ((NODE)->next) \
+  if ((NODE)->next) { \
     (NODE)->next->prev = (NODE)->prev; \
-  if ((NODE)->prev) \
+  } \
+  if ((NODE)->prev) { \
     (NODE)->prev->next = (NODE)->next; \
-  else \
+  } else { \
     (ports + (PORT))->next = (NODE)->next; \
+  } \
   (NODE)->next = cache->next; \
   cache->next = (NODE); \
   ++cache_size; \
@@ -42,8 +52,9 @@ typedef struct Ports {
 
 #define ADD_NODE(DPORT, DADDR, SPORT, SADDR) { \
   PList *new; \
-  if (!cache->next) \
+  if (!cache->next) { \
     expand_cache (); \
+  } \
   new = cache->next; \
   cache->next = cache->next->next; \
   --cache_size; \
