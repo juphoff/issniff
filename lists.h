@@ -2,19 +2,29 @@
 
 #define CACHE_INC 16
 
-struct PList {
+typedef struct PList {
   struct PList *next, *prev;
-  ADDR_T saddr, daddr;
-  PORT_T sport;
-  u_char *data;
-  u_int dlen;
-  u_int pkts;
+  ADDR_T daddr, saddr;
+  PORT_T dport, sport;		/* dport redundant, but saves some arg passes */
+  UCHAR *data;
+  UINT dlen, pkts, timeout;
   time_t stime;
-};
-  
-static struct Ports {
-  int port;
-  struct PList *next;
-} *ports;
+} PList;
 
-static struct PList *cache;
+typedef struct Ports {
+  int port;
+  PList *next;
+} Ports;
+
+#define END_NODE(NODE, PORT, REASON) \
+  pdump((NODE), (REASON)); \
+  if ((NODE)->next) \
+    (NODE)->next->prev = (NODE)->prev; \
+  if ((NODE)->prev) \
+    (NODE)->prev->next = (NODE)->next; \
+  else \
+    (ports + (PORT))->next = (NODE)->next; \
+  (NODE)->next = cache->next; \
+  cache->next = (NODE); \
+  ++cache_size; \
+  --curr_conn;
