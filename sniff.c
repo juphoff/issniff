@@ -113,7 +113,7 @@ expand_cache (void)
   UCHAR *dblk, *lblk;
   PList *node = cache;
 
-  /* Consolidate?  Perhaps also make non-fatal? */
+  /* Consolidate?  Perhaps also make malloc() failures non-fatal here? */
   if (!(lblk = (UCHAR *)malloc (sizeof (PList) * cache_increment))) {
     perror ("malloc");
     exit (errno);
@@ -295,7 +295,6 @@ dump_node (PList *node, const char *reason)
   struct in_addr ia;
   UCHAR lastc = 0;
   UCHAR *data = node->data;
-  UINT dlen = node->dlen;
   char *timep = ctime (&node->stime);
   time_t now = time (NULL);
 
@@ -307,9 +306,10 @@ dump_node (PList *node, const char *reason)
   printf ("Path: %s:%d -> ", inet_ntoa (ia), node->sport);
   ia.s_addr = node->daddr;
   printf ("%s:%d\n", inet_ntoa (ia), node->dport);
-  printf ("Stat: %d packets, %d bytes [%s]\n\n", node->pkts, dlen, reason);
+  printf ("Stat: %d packets, %d bytes [%s]\n\n", node->pkts, node->dlen,
+	  reason);
 
-  while (dlen-- > 0) {
+  while (node->dlen-- > 0) {
     if (*data < 32) {
       switch (*data) {
       case '\0':
