@@ -1,6 +1,6 @@
 .\" -*- nroff -*-
 .\" $Id$
-.TH issniff 8 "24 December 1997" "Version @@IS_VERSION@@" "NRAO/AUI"
+.TH issniff 8 "12 June 1998" "Version @@IS_VERSION@@" "NRAO/AUI"
 .SH NAME
 issniff \- Industrial Strength SNIFFer
 .SH SYNOPSIS
@@ -191,15 +191,8 @@ OSF/1: T3.2, 4.0B.
 SunOS: 4.1.2.
 .br
 Solaris: 2.5 (currently under development).
-.SH REDISTRIBUTION TERMS
-Explicit permission, in the form of a personally-addressed written
-document or electronic mail message bearing either my written or
-electronic signature, respectively, is required for legal possession
-and/or use of \fBissniff\fR.  Redistribution in any form is not
-permitted, under any circumstances, without explicit permission in one
-of the aforementioned forms.
 .SH AUTHOR
-This code and documentation is Copyright (C) 1996, 1997 Jeffrey A. Uphoff
+This code and documentation is Copyright (C) 1996-1998 Jeffrey A. Uphoff
 <juphoff@nrao.edu>.
 .br
 All rights reserved.
