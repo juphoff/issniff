@@ -12,6 +12,11 @@
 #define OS_NOLOCAL 0
 
 /*
+ * Misc. definitions.
+ */
+#define MAXNAMLEN NAME_MAX
+
+/*
  * IP protocol header definitions.
  */
 #define IPPROT(X) ((X)->protocol)
