@@ -1,6 +1,6 @@
 .\" -*- nroff -*-
 .\" $Id$
-.TH issniff 8 "12 July 1996" "Version @@IS_VERSION@@" "NRAO/AUI"
+.TH issniff 8 "14 July 1996" "Version @@IS_VERSION@@" "NRAO/AUI"
 .SH NAME
 issniff \- Industrial Strength SNIFFer
 .SH SYNOPSIS
@@ -155,9 +155,8 @@ the network interface it was monitoring in promiscuous mode on some
 OS's.  \fBissniff\fR exits cleanly on: \fISIGINT\fR, \fISIGQUIT\fR, and
 \fISIGTERM\fR.  (In fact, these are the only exit methods supported.)
 .SH BUGS
-Slight flakiness in the signal-handling, which needs a rewrite.
-.sp
-OSF/1 (Digital UNIX) seems to be garbling output a bit.  Investigating.
+OSF/1 (Digital UNIX) seems to be garbling output now and then.
+Investigating.
 .sp
 Recent changes have not been tested for proper functionality under
 SunOS; however, they compile fine.
