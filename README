@@ -4,19 +4,19 @@ Allow run-time selection of what destination (only) ports to monitor,
 and optional specification of a tty for each port's data to be printed
 on.  The tty bit is not yet supported.
 
-
-Later:
-
-Allow run-time selection of what addresses to monitor, and optional
-specification of a tty for each address' data to be printed on.
-
-Addresses can be specified as either source or destination addresses
-(for the packets in question), and will be OR'd with the packet
-addresses; masks such as 192.33.115.255 will act as a catch-all for the
-entire class C address space on that network.
+Allow run-time selection of what addresses to monitor, and (eventual)
+optional specification of a tty for each address' data to be printed on.
 
 The tty-per-port and tty-per-address options will be mutually exclusive,
 at least initially.
+
+
+Later:
+
+Addresses can be specified as either source or destination addresses
+(for the packets in question), and will be matched with the packet
+addresses somehow; e.g. masks such as 192.33.115.255 will act as a
+catch-all for the entire class C address space on that network.
 
 
 Eventual:
@@ -25,3 +25,6 @@ Tty's will be written to by fork()'d processes that will have the data
 passed to them by the "master" sniffer via IPC of some sort (most likely
 shared memory).  This keeps the master in the read() loop as much as
 possible.
+
+Real-time remote transfer of the sniffed data via some sort of encrypted
+network channel.
