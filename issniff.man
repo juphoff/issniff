@@ -1,6 +1,6 @@
 .\" -*- nroff -*-
 .\" $Id$
-.TH issniff 8 "19 October 1997" "Version @@IS_VERSION@@" "NRAO/AUI"
+.TH issniff 8 "24 December 1997" "Version @@IS_VERSION@@" "NRAO/AUI"
 .SH NAME
 issniff \- Industrial Strength SNIFFer
 .SH SYNOPSIS
@@ -49,8 +49,7 @@ up two bytes of internal storage.
 .BI -i \ interface
 The network interface to monitor.  (Default is the first auto-detected
 interface of a known type, using the following priority scheme for
-Linux: Ethernet, SLIP, loopback, and dummy; please note that PPP is not
-yet supported, though will be very shortly.  Ethernet is the only
+Linux: Ethernet, PPP, SLIP, loopback, and dummy.  Ethernet is the only
 interface supported on non-Linux systems at this time.)
 .TP
 .B -n
