@@ -1,6 +1,6 @@
 .\" -*- nroff -*-
 .\" $Id$
-.TH issniff 8 "14 July 1996" "Version @@IS_VERSION@@" "NRAO/AUI"
+.TH issniff 8 "15 August 1996" "Version @@IS_VERSION@@" "NRAO/AUI"
 .SH NAME
 issniff \- Industrial Strength SNIFFer
 .SH SYNOPSIS
@@ -11,9 +11,11 @@ issniff
 \fBissniff\fR switches the selected (or auto-detected) network interface
 into "promiscuous" mode and monitors the network traffic visible to that
 interface, collecting data on TCP-protocol network connections to the
-destination port(s) selected on the command line.  At least one port
-must be specified.  A '+' prefix on a port number means to monitor
-traffic in both directions on connections to that port.
+destination port(s) selected on the command line.  Alternatively,
+packets may be read from a local packet-dump file created by 'tcpdump'.
+.sp
+At least one port must be specified.  A '+' prefix on a port number
+means to monitor traffic in both directions on connections to that port.
 .sp
 When a new network connection to a selected port is detected (a
 \fISYN\fR packet), \fBissniff\fR starts collecting data for that
@@ -96,6 +98,11 @@ This is not a bug.
 Verbose mode.  Output one-line descriptions of new connections to
 \fIstderr\fR each time one is detected.
 .TP
+.BI -w \ filename
+Take packet input from a packet-dump file written by 'tcpdump -w', vice
+from a "real-time" network interface.  (Still under development; only
+works under Linux so far.)
+.TP
 .B -C
 Colorize output, with color selection based on the travel direction of
 the packets--useful when monitoring traffic in both directions on a
@@ -160,6 +167,8 @@ the network interface it was monitoring in promiscuous mode on some
 OS's.  \fBissniff\fR exits cleanly on: \fISIGINT\fR, \fISIGQUIT\fR, and
 \fISIGTERM\fR.  (In fact, these are the only exit methods supported.)
 .SH BUGS
+Tcpdump "interface" still buggy and under development.
+.sp
 OSF/1 (Digital UNIX) seems to be garbling output now and then.
 Investigating.
 .sp
@@ -169,7 +178,7 @@ SunOS; however, they compile fine.
 Some features and/or options have not yet been implemented.
 \fBissniff\fR has been tested under:
 .sp
-Linux: 1.2.13, 1.99.x., 2.0.0.
+Linux: 1.2.13, 1.99.x., 2.0.x.
 .br
 OSF/1: T3.2.
 .br
