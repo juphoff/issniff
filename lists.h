@@ -75,9 +75,9 @@ enum { with_syn, without_syn, first_fin };
   sigprocmask (SIG_SETMASK, &storeset, NULL); \
 }
 
-#define ADD_DATA(NODE, BUF, IPH, TCPH, SHIFT) { \
+#define ADD_DATA(NODE, BUF, IPH, TCPH, SHIFT, THELENGTH) { \
   int i = 0; \
-  int blen = ntohs (IPLEN((IPH))) - IPHLEN((IPH)) - DOFF((TCPH)); \
+  int blen = (((THELENGTH) < ntohs (IPLEN((IPH)))) ? (THELENGTH) : ntohs (IPLEN((IPH)))) - IPHLEN((IPH)) - DOFF((TCPH)); \
   int todo = ((NODE)->dlen + blen > maxdata) ? maxdata - (NODE)->dlen : blen; \
   while (i < todo) { \
     (NODE)->data[(NODE)->dlen + i] = (UDATA)((BUF)[i++]) << (SHIFT); \
@@ -91,7 +91,7 @@ enum { with_syn, without_syn, first_fin };
   } \
 }
 
-#define ADD_NODE(DPORT, DADDR, SPORT, SADDR, HAS_SYN, BUF, IPH, TCPH, SHIFT) { \
+#define ADD_NODE(DPORT, DADDR, SPORT, SADDR, HAS_SYN, BUF, IPH, TCPH, SHIFT, LENGTH) { \
   PList *new = NULL; \
   if (!cache_size) { \
     EXPAND_CACHE; \
@@ -123,7 +123,7 @@ enum { with_syn, without_syn, first_fin };
       ports[(DPORT)].next = new; \
     } \
     sigprocmask (SIG_SETMASK, &storeset, NULL); \
-    ADD_DATA (new, (BUF), (IPH), (TCPH), (SHIFT)); \
+    ADD_DATA (new, (BUF), (IPH), (TCPH), (SHIFT), (LENGTH)); \
   } else { \
     MENTION (DPORT, DADDR, SPORT, SADDR, "No memory; NOT MONITORING"); \
   } \
