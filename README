@@ -1,11 +1,15 @@
 Basic:
 
-Allow run-time selection of what destination (only) ports to monitor,
-and optional specification of a tty for each port's data to be printed
-on.  The tty bit is not yet supported.
-
 Allow run-time selection of what addresses to monitor, and (eventual)
 optional specification of a tty for each address' data to be printed on.
+
+Allow catching connections "late" meaning that the SYN packet(s) were
+not seen.  This would allow "pickup" of already-established connections
+at runtime.
+
+Allow run-time selection of what destination (only) ports to monitor,
+and optional specification of a tty for each port's data to be printed
+on.  (The tty bit is not yet supported.)
 
 The tty-per-port and tty-per-address options will probably be mutually
 exclusive, at least initially.
