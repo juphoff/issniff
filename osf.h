@@ -28,6 +28,8 @@
 #define DPORT(X) ((X)->th_dport)
 #define DOFF(X) (((X)->th_xoff >> 4) * 4) /* Blah again. */
 #define SYN(X) ((X)->th_flags & TH_SYN)
+#define FIN(X) ((X)->th_flags & TH_FIN)
+#define RST(X) ((X)->th_flags & TH_RST)
 #define FINRST(X) ((X)->th_flags & (TH_FIN | TH_RST))
 
 /*
