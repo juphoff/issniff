@@ -4,7 +4,8 @@ include .version
 
 # *DEFINE THE OS*
 OS	= linux
-#OSNAME	= sunos		# Not done yet.
+#OS	= sunos		# Not done yet.
+#OS	= osf		# Not done yet.
 
 # Set level of DEBUG.
 DEBUGS	= -DDEBUG
