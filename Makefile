@@ -9,6 +9,7 @@ include .version
 OS	= linux
 #OS	= osf		# Works.
 #OS	= sunos		# Works.
+#OS	= solaris	# Pre-alpha: still SEGV's mysteriously.
 
 # Set level of DEBUG.
 DEBUGS	= -DDEBUG
