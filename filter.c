@@ -31,7 +31,7 @@ rt_filter (UCHAR *buf, int len)
   IPhdr *iph = (IPhdr *)buf;
 
 #if defined(DEBUG) || !defined(USING_BPF)
-  if (IPPROT (iph) != TCPPROT) { /* Only looking at TCP/IP right now. */
+  if (IPPROT (iph) != IPPROTO_TCP) { /* Only looking at TCP/IP right now. */
 # ifdef USING_BPF
     fprintf (stderr, "\a*** A non-TCP packet snuck through the filter!\n");
     ++non_tcp;
@@ -133,7 +133,7 @@ sf_filter (UCHAR *buf, int len)
       exit (err);
     }
   }
-  if (IPPROT (iph) != TCPPROT) {
+  if (IPPROT (iph) != IPPROTO_TCP) {
     return;
   } else {
     printf ("about to write\n");
