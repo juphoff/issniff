@@ -1,25 +1,23 @@
 To build, do:
 
-make OS=os_name
+./configure
+gmake
 
-where os_name is one of:
+[Standard GNU autoconf options may be passed to configure.]
 
-      linux	 [For Linux]
-      osf	 [For Digital UNIX, a.k.a. OSF/1]
-      sunos	 [For SunOS 4.1.x]
+GNU make is *required*: the Makefile (generated from Makefile.in by
+configure) is currently very GNU-specific.  Also, all development has
+been done using gcc (the GNU C compiler): this is the only supported
+compiler; the $CFLAGS et al. in the Makefile are very GCC-specific, and
+will choke most other compilers badly.  Portability to other compilers
+is low on my priority list and thus will likely not be seen for some
+time.
 
-(The default, if no OS=os_name option is supplied, is linux.)
+Expect (i.e. ignore) compiler warnings about alignment, etc., from
+OSF/1, SunOS, and Solaris.  Linux may also complain about a zero-sized
+__data array in a kernel #include file...don't worry about that either.
 
-Note: GNU make is required; the Makefile is written in a very
-GNU-specific manner.  Also, only GCC has been tested for code
-compilation (under all OS's).  The $CFLAGS et al. in the Makefile are
-very GCC-specific, and will choke most other compilers badly.
-
-Expect (i.e. ignore) compiler warnings about alignment, etc., from SunOS
-and OSF/1.  Linux may also complain about a zero-sized __data array in a
-kernel #include file...don't worry about that either.
-
-Usage as a back-end for 'tcpdump' is only supported under, and only
-compiles under, Linux at this time.
+Usage as a back-end for 'tcpdump' is only supported under--and only
+compiles under--Linux at this time.
 
 Read the manpage for usage.
