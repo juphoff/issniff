@@ -10,7 +10,7 @@ include .version
 #DEBUGS	= -DDEBUG
 
 # OS-specific defines.
-DEFINES_linux	= -D_POSIX_SOURCE -DSUPPORT_TCPDUMP
+DEFINES_linux	= -DSUPPORT_TCPDUMP
 DEFINES_sunos	= -D__USE_FIXED_PROTOTYPES__
 DEFINES_solaris	= -D__EXTENSIONS__
 
@@ -18,8 +18,8 @@ DEFINES_solaris	= -D__EXTENSIONS__
 DEFINES	= $(DEFINES_@this_os@) -DIS_VERSION=\"$(IS_VERSION)\" -DOSVER=\"@this_os@\"
 
 # The Ted Ts'o express.  Noisy under some OS's.  Very gcc-specific.
-WFLAGS	= -ansi -pedantic -Wall -Wcast-align -Wcast-qual -Winline \
-          -Wmissing-prototypes -Wnested-externs -Wpointer-arith -Wshadow \
+WFLAGS	= -pedantic -Wall -Wcast-align -Wcast-qual -Winline \
+	  -Wmissing-prototypes -Wnested-externs -Wpointer-arith -Wshadow \
           -Wstrict-prototypes -Wwrite-strings
 
 # OS-specific C compiler flags.
