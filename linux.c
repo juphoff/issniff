@@ -22,7 +22,7 @@ close_interface (int sig)
     perror ("ioctl (SIOCSIFFLAGS)");
     exit (errno);
   }
-  fprintf (stderr, "Interface %s shut down.\n", ifr.ifr_name);
+  fprintf (stderr, "Interface %s shut down; signal %d.\n", ifr.ifr_name, sig);
   exit (0);
 }
 
