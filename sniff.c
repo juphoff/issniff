@@ -1,6 +1,7 @@
 /* $Id$ */
 
 #include <ctype.h>
+#include <dirent.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
@@ -16,7 +17,7 @@
 /*
  * Local variables.
  */
-static char of_name[NAME_MAX];
+static char of_name[MAXNAMLEN];
 enum { to_stdout = 1, to_file = 2 };
 enum { s_finrst, s_maxdata, s_timeout };
 static int all_conns = 0;	/* New: doesn't work right yet. */
@@ -261,11 +262,10 @@ main (int argc, char **argv)
 	/* Still working on other filters.... */
 /* 	filter = sf_filter; */
 /* 	if_read = if_read_ip_raw; */
-	strncpy (of_name, optarg, NAME_MAX);
+	strncpy (of_name, optarg, MAXNAMLEN);
 
 	if (!(of_p = fopen (of_name, "a"))) {
-	  fprintf (stderr, "Cannot open output file '%s': %s\n", of_name,
-		   strerror (errno));
+	  perror ("Cannot open output file");
 	  exit (errno);
 	}
 	break;
