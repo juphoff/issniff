@@ -1,7 +1,5 @@
 /* $Id$ */
 
-#include <linux/if_ether.h>
-#include <net/if.h>
 #include <netinet/ip.h>
 #include <netinet/protocols.h>
 #include <netinet/tcp.h>
@@ -9,6 +7,7 @@
 /*
  * General definitions.
  */
+#define IF_BUFSIZ 2048
 #define DEFAULT_INTERFACE "eth0"
 #define SOCKPROT 0x300
 #define UCHAR u_char
@@ -38,6 +37,5 @@
 /*
  * Data types.
  */
-typedef struct ethhdr ETHhdr;
 typedef struct iphdr IPhdr;
 typedef struct tcphdr TCPhdr;
