@@ -1,6 +1,6 @@
 .\" -*- nroff -*-
 .\" $Id$
-.TH issniff 8 "16 August 1996" "Version @@IS_VERSION@@" "NRAO/AUI"
+.TH issniff 8 "20 March 1997" "Version @@IS_VERSION@@" "NRAO/AUI"
 .SH NAME
 issniff \- Industrial Strength SNIFFer
 .SH SYNOPSIS
@@ -136,11 +136,11 @@ xterm with colorization extensions, to use this option effectively.
 .TP
 .BI -F \ color
 Color number to use for output of data traveling from a monitored port
-("backwards").  Implies \fB-C\fR.  (Default is \fI36\fR; cyan).
+("backwards").  Implies \fB-C\fR.  (Default is \fI34\fR; blue).
 .TP
 .BI -T \ color
 Color number to use for output of data traveling to a monitored port.
-Implies \fB-C\fR.  (Default is \fI33\fR; yellow.)
+Implies \fB-C\fR.  (Default is \fI31\fR; red.)
 .SH SIGNALS
 .TP
 .B USR1
@@ -182,9 +182,9 @@ SunOS; however, they compile fine.
 Some features and/or options have not yet been implemented.
 \fBissniff\fR has been tested under:
 .sp
-Linux: 1.2.13, 1.99.x., 2.0.x.
+Linux: 1.2.13, 1.3.45, 1.99.x., 2.0.x.
 .br
-OSF/1: T3.2.
+OSF/1: T3.2, 4.0B.
 .br
 SunOS: 4.1.2.
 .SH REDISTRIBUTION TERMS
@@ -195,7 +195,7 @@ and/or use of \fBissniff\fR.  Redistribution in any form is not
 permitted, under any circumstances, without explicit permission in one
 of the aforementioned forms.
 .SH AUTHOR
-This code and documentation is Copyright (C) 1996, Jeffrey A. Uphoff
+This code and documentation is Copyright (C) 1996, 1997 Jeffrey A. Uphoff
 <juphoff@nrao.edu>.
 .br
 All rights reserved.
