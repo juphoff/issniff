@@ -27,7 +27,7 @@ for data-collection termination.
 .TP
 .BI -c \ cache_increment
 The number of connection entries to expand the data cache by when an
-expansion is required.  (Default is \fI16\fR.)
+expansion is required.  (Default is \fI16\fR, an arbitrary value.)
 .sp
 Higher values should result in an infinitesimal speed improvement, but
 will also cause \fBissniff\fR to use more memory.
@@ -35,21 +35,23 @@ will also cause \fBissniff\fR to use more memory.
 .BI -d \ max_data
 The maximum amount of data, in bytes, to collect for a connection before
 dumping its data/statistics and discontinuing data-collection.  (Default
-is \fI4096\fR.)  Note that each collected byte currently takes up two
-bytes of internal storage.
+is \fI4096\fR, an arbitrary value.)  Note that each collected byte takes
+up two bytes of internal storage.
 .TP
 .BI -i \ interface
 The network interface to monitor.  (Default is the first auto-detected
-interface of a known type, using the following priority scheme:
-Ethernet, SLIP, loopback, and dummy.  Please note that PPP is not yet
-supported, though will be very shortly.)
+interface of a known type, using the following priority scheme for
+Linux: Ethernet, SLIP, loopback, and dummy; please note that PPP is not
+yet supported, though will be very shortly.  Ethernet is the only
+interface supported on non-Linux systems at this time.)
 .TP
 .B -n
 No local packets/connections.  Only packets/connections originating from
 \fBother\fR systems will be passed through to the packet-filtering
 layer, i.e. locally-originating packets/connections will be "lost."
-(Default is to pass/process all packets/connections.)  [Not fully
-tested.]
+(Default is to pass/process all packets/connections on OS's that support
+it, currently limited to Linux; this option has no effect on other
+OS's.)
 .TP
 .B -s
 "Squash" output.  Consecutive carriage-returns/newlines in the collected
@@ -132,13 +134,19 @@ Exit immediately, with no output.  Turns off promiscuous mode.
 .TP
 .B KILL
 Do \fBnot\fR send a \fISIGKILL\fR to \fBissniff\fR; doing so will leave
-the network interface it was monitoring in promiscuous mode.
-\fBissniff\fR exits cleanly on: \fISIGINT\fR, \fISIGQUIT\fR, and
+the network interface it was monitoring in promiscuous mode on some
+OS's.  \fBissniff\fR exits cleanly on: \fISIGINT\fR, \fISIGQUIT\fR, and
 \fISIGTERM\fR.  (In fact, these are the only exit methods supported.)
 .SH BUGS
-None known; however, some features and options have not yet been
-implemented.  \fBissniff\fR has only been tested under Linux versions
-1.2.13 and 1.99.2.
+None known; however, some features and/or options have not yet been
+implemented, especially under OS's other than Linux.  \fBissniff\fR has
+been tested under:
+.sp
+Linux: 1.2.13, 1.99.x.
+.br
+SunOS: 4.1.2.
+.SH NOTE
+The signal-handling could use some work.
 .SH REDISTRIBUTION TERMS
 Explicit permission, in the form of a personally-addressed written
 document or electronic mail message bearing either my written or
