@@ -194,6 +194,10 @@ main (int argc, char **argv)
 {
   struct sigaction sigact;
 
+  if (getuid ()) {
+    fputs ("Only root can run this!\n", stderr);
+    return 1;
+  }
   if (argc > 1) {
     char opt;
     int i;
