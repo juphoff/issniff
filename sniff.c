@@ -20,7 +20,6 @@ int cache_increment = CACHE_INC;
 int cache_max = 0;
 int cache_size = 0;
 int curr_conn = 0;
-/* int hiport = 0; */
 int maxdata = IS_MAXDATA;
 int of_methods = to_stdout;
 int timeout = IS_TIMEOUT;
@@ -60,8 +59,9 @@ static void show_state (int);
 /*
  * Misc. local macros.
  */
-#define CHKOPT(FALLBACK) (atoi (optarg) ? atoi (optarg) : (FALLBACK))
 #define YN(X) ((X) ? "yes" : "no")
+/* Blech: eliminate 2nd atoi() call.... */
+#define CHKOPT(FALLBACK) (atoi (optarg) ? atoi (optarg) : (FALLBACK))
 
 /*
  * Jump!
