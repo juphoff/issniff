@@ -1,6 +1,6 @@
-# Copyright (c) 1995 Jeffrey A. Uphoff
+# Copyright (c) 1996 Jeffrey A. Uphoff
 #
-# ISSniff.  A Industrial-Strength Sniffer (eventually), primarily for Linux.
+# ISSniff.  An Industrial-Strength Sniffer (eventually), primarily for Linux.
 #
 # $Id$
 
@@ -12,7 +12,7 @@ DEFINES	= -D_POSIX_SOURCE
 
 # For normal use.
 CC	= gcc
-# To generate a.out binaries with an ELF-defaulting compiler.
+# Typical way to generate a.out binaries with an ELF-defaulting compiler.
 #CC	= gcc -b i486-linuxaout
 
 # The Ted Ts'o express.  :)~
@@ -27,10 +27,7 @@ WFLAGS	= -ansi -pedantic -Wall -Wwrite-strings -Wpointer-arith -Wcast-qual \
 CFLAGS	= -g -O6 -pipe -fomit-frame-pointer $(DEBUGS) $(DEFINES) $(WFLAGS)
 LDFLAGS	= -g
 
-# Miscellanea.
-INDENT	= indent
-
-.PHONY:	all clean distclean indent realclean
+.PHONY:	all clean distclean realclean
 
 PROG	= issniff
 SRCS	= linux.c sniff.c
@@ -53,10 +50,7 @@ $(PROG):	$(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $(OBJS)
 
 clean:
-	$(RM) $(PROG) *.o core
+	$(RM) $(PROG) *.o core*
 
 realclean distclean:	clean
 	$(RM) .depend *~ \#*
-
-indent:
-	$(INDENT) $(SRCS)
