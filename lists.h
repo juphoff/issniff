@@ -14,7 +14,7 @@ typedef struct PList {
   int caught_syn;
 } PList;
 
-/* Pseudo-hash. */
+/* Simple rough hash. */
 typedef struct Ports {
   short int port;
   short int twoway;
@@ -33,7 +33,7 @@ enum { with_syn, without_syn, first_fin };
   PList *cnode = cache; \
   if (!(blk = (UCHAR *)malloc ((sizeof (PList) + sizeof (UDATA) * maxdata) * \
 			       cache_increment))) { \
-    perror ("** malloc"); 	/* Not fatal, though recovery is untested. */ \
+    perror ("** malloc"); 	/* Not fatal, though recovery is untested! */ \
   } else { \
     for (i = 0; i < cache_increment; i++, blk += sizeof (UDATA) * maxdata) { \
       cnode->next = (PList *)blk; \
@@ -59,6 +59,7 @@ enum { with_syn, without_syn, first_fin };
 
 #define END_NODE(NODE, PORT, REASON) { \
   DUMP_NODE ((NODE), (REASON)); \
+  sigprocmask (SIG_SETMASK, &blockset, &storeset); \
   if ((NODE)->next) { \
     (NODE)->next->prev = (NODE)->prev; \
   } \
@@ -71,6 +72,7 @@ enum { with_syn, without_syn, first_fin };
   cache->next = (NODE); \
   ++cache_size; \
   --curr_conn; \
+  sigprocmask (SIG_SETMASK, &storeset, NULL); \
 }
 
 #define ADD_DATA(NODE, BUF, IPH, TCPH, SHIFT) { \
@@ -95,6 +97,7 @@ enum { with_syn, without_syn, first_fin };
     EXPAND_CACHE; \
   } \
   if (cache_size) { \
+    sigprocmask (SIG_SETMASK, &blockset, &storeset); \
     new = cache->next; \
     cache->next = cache->next->next; \
     --cache_size; \
@@ -119,6 +122,7 @@ enum { with_syn, without_syn, first_fin };
       new->next = ports[(DPORT)].next; \
       ports[(DPORT)].next = new; \
     } \
+    sigprocmask (SIG_SETMASK, &storeset, NULL); \
     ADD_DATA (new, (BUF), (IPH), (TCPH), (SHIFT)); \
   } else { \
     MENTION (DPORT, DADDR, SPORT, SADDR, "No memory; NOT MONITORING"); \
