@@ -28,7 +28,7 @@ for data-collection termination.
 .B -a
 Track all connections--even those for which no \fISYN\fR packet was
 seen--allowing monitoring of already-established connections.  (Doesn't
-work correctly yet; still a "stub.")
+work correctly yet; still a semi-functional--and buggy--"stub.")
 .TP
 .BI -c \ cache_increment
 The number of connection entries to expand the data cache by when an
