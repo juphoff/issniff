@@ -107,7 +107,8 @@ enum { pkt_to, pkt_from };
 #define MENTION(DPORT, DADDR, SPORT, SADDR, MSG) { \
   struct in_addr ia; \
   ia.s_addr = (SADDR); \
-  fprintf (stderr, "*  %s: %s:%d -> ", (MSG), inet_ntoa (ia), (SPORT)); \
+  fprintf (stderr, "*  %s: %s:%d %s ", (MSG), inet_ntoa (ia), (SPORT), \
+	   (ports + (DPORT))->twoway ? "<->" : "->"); \
   ia.s_addr = (DADDR); \
   fprintf (stderr, "%s:%d\n", inet_ntoa (ia), (DPORT)); \
 }
