@@ -68,6 +68,7 @@ enum { pkt_to, pkt_from };
   } \
   (NODE)->dlen += todo; \
   if ((NODE)->dlen == maxdata) { \
+    ++stats[s_maxdata]; \
     END_NODE ((NODE), (NODE)->dport, "MAXDATA"); \
   } else { \
     time (&(NODE)->timeout); \
@@ -102,6 +103,7 @@ enum { pkt_to, pkt_from };
     new->next = ports[(DPORT)].next; \
     ports[(DPORT)].next = new; \
   } \
+  ++stats[s_tot]; \
 }
 
 #define MENTION(DPORT, DADDR, SPORT, SADDR, MSG) { \

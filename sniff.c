@@ -46,7 +46,10 @@ static int timeout = IS_TIMEOUT;
 static int verbose = 0;
 static PList *cache;
 static Ports *ports;
+static int stats[] = { 0, 0, 0, 0 };
 
+enum { s_tot, s_finrst, s_maxdata, s_timeout };
+  
 /*
  * Local function prototypes.
  */
@@ -131,6 +134,11 @@ show_state (int sig)
 *  Squashed output: %s\n\
 *  Verbose mode: %s\n\
 *  Ted Turner mode (colorization): %s\n\
+*  Stats:\n\
+*    Total connections:  %d\n\
+*    FIN/RST terminated: %d\n\
+*    Exceeded data size: %d\n\
+*    Exceeded timeout:   %d\n\
 *  Monitoring ports:",
 	   IS_VERSION,
 	   if_getname (),
@@ -143,7 +151,11 @@ show_state (int sig)
 	   YN (nolocal),
 	   YN (squash_output),
 	   YN (verbose),
-	   YN (colorize));
+	   YN (colorize),
+	   stats[s_tot],
+	   stats[s_finrst],
+	   stats[s_maxdata],
+	   stats[s_timeout]);
 
   for (i = 0; i <= hiport; i++) {
     if (ports[i].port) {
@@ -175,6 +187,7 @@ find_node (PORT_T dport, ADDR_T daddr, PORT_T sport, ADDR_T saddr)
     /* Timeout stanza. */
     if (timeout && (now - node->timeout > timeout)) {
       PList *nnode = node->next;
+      ++stats[s_timeout];
       END_NODE (node, dport, "TIMEOUT");
       node = nnode;
     } else {
@@ -217,6 +230,7 @@ filter (UCHAR *buf)
 		    data_from);
 
 	  if (FINRST (tcph)) {
+	    ++stats[s_finrst];
 	    END_NODE (node, sport, "<-FIN/RST");
 	  }
 	}
@@ -238,6 +252,7 @@ filter (UCHAR *buf)
 	ADD_DATA (node, buf + IPHLEN (iph) + DOFF (tcph), iph, tcph, data_to);
 
 	if (FINRST (tcph)) {
+	  ++stats[s_finrst];
 	  END_NODE (node, dport, "FIN/RST->");
 	}
       }
