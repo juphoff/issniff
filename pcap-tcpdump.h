@@ -40,7 +40,7 @@
  * @(#) $Header$ (LBL)
  */
 
-#include <time.h>
+#include <sys/time.h>
 
 #define TCPDUMP_MAGIC 0xa1b2c3d4
 
