@@ -16,6 +16,7 @@ typedef struct PList {
 /* Pseudo-hash. */
 typedef struct Ports {
   int port;
+  int twoway;
   PList *next;
 } Ports;
 
