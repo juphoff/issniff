@@ -3,59 +3,52 @@
 #include <ctype.h>
 #include <dirent.h>
 #include <fcntl.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
 #include <unistd.h>
-#include <arpa/inet.h>
-#include OSVER".h"
+#include "globals.h"
 #include "sniff.h"
-#include "lists.h"
+#include "shm.h"
+#include "filter.h"
+
+/*
+ * Global variables.
+ */
+int all_conns = 0;
+int cache_increment = CACHE_INC;
+int cache_max = 0;
+int cache_size = 0;
+int curr_conn = 0;
+int hiport = 0;
+int maxdata = IS_MAXDATA;
+int of_methods = to_stdout;
+int timeout = IS_TIMEOUT;
+int verbose = 0;
+int stats[] = { 0, 0, 0, 0 };
+sigset_t blockset;
+FILE *of_p = NULL;
+Ports *ports;
+PList *cache;
+
+#if defined(DEBUG) && defined(USING_BPF)
+int non_tcp = 0;
+#endif /* DEBUG && USING_BPF */
 
 /*
  * Local variables.
  */
 static char of_name[MAXNAMLEN];
-enum { to_stdout = 1, to_file = 2 };
-enum { s_finrst, s_maxdata, s_timeout };
-static int all_conns = 0;	/* New: doesn't work right yet. */
-static int cache_increment = CACHE_INC;
-static int cache_max = 0;
-static int cache_size = 0;
 static int colorfrom = FROM_COLOR;
 static int colorize = 0;
 static int colorto = TO_COLOR;
-static int curr_conn = 0;
-static int hiport = 0;
-static int maxdata = IS_MAXDATA;
 static int nolocal = OS_NOLOCAL;
-static int of_methods = to_stdout;
 static int squash_output = 0;
-static int timeout = IS_TIMEOUT;
-static int verbose = 0;
-static int stats[] = { 0, 0, 0 };
-static FILE *of_p = NULL;
-static Ports *ports;
-static PList *cache;
+static struct sigaction sigact;
 
-#if defined(DEBUG) && defined(USING_BPF)
-static int non_tcp = 0;
-#endif /* DEBUG && USING_BPF */
-  
 /*
  * Local function prototypes.
  */
 static void dump_conns (int);
-static void dump_node (const PList *, const char *, FILE *);
-static void rt_filter (UCHAR *, int);
-#if 0
-static void sf_filter (UCHAR *, int);
-#endif
 static void show_conns (int);
 static void show_state (int);
-static PList *find_node (PORT_T, ADDR_T, PORT_T, ADDR_T);
 
 /*
  * Misc. local macros.
@@ -82,9 +75,6 @@ dump_conns (int sig)
   int i;
   PList *node;
 
-  if (sig == SIGHUP) {
-    signal (SIGHUP, dump_conns);
-  }
   for (i = 0; i <= hiport; i++) {
     if ((node = ports[i].next)) {
       while (node) {
@@ -109,7 +99,6 @@ show_conns (int sig)
   int i;
   PList *node;
 
-  signal (sig, show_conns);
   fputs ("\n** Active connections:\n", stderr);
 
   for (i = 0; i <= hiport; i++) {
@@ -133,7 +122,6 @@ show_state (int sig)
 {
   int i;
 
-  signal (sig, show_state);
   fprintf (stderr, "\n\
 ** Current state:\n\
 *  Version: %s\n\
@@ -145,14 +133,14 @@ show_state (int sig)
 *  Max data size (bytes): %d\n\
 *  Idle timeout (seconds): %d\n\
 *  Ignoring local connections/packets: %s\n\
+*  Monitoring connctions detected 'late': %s\n\
 *  Squashed output: %s\n\
 *  Verbose mode: %s\n\
 *  Ted Turner mode (colorization): %s\n\
 *  Connection stats:\n\
 *    FIN/RST terminated: %d\n\
 *    Exceeded data size: %d\n\
-*    Exceeded timeout:   %d\n\
-*  Monitoring ports:",
+*    Exceeded timeout:   %d\n",
 	   IS_VERSION,
 	   if_getname (),
 	   curr_conn,
@@ -162,12 +150,18 @@ show_state (int sig)
 	   maxdata,
 	   timeout,
 	   YN (nolocal),
+	   YN (all_conns),
 	   YN (squash_output),
 	   YN (verbose),
 	   YN (colorize),
 	   stats[s_finrst],
 	   stats[s_maxdata],
 	   stats[s_timeout]);
+
+  if (all_conns)
+    fprintf (stderr, "*    Detected 'late':    %d\n", stats[s_late]);
+
+  fputs ("*  Monitoring ports:", stderr);
 
   for (i = 0; i <= hiport; i++) {
     if (ports[i].port) {
@@ -186,33 +180,6 @@ show_state (int sig)
   fputs ("\n\n", stderr);
 }
 
-/*
- * Does double duty as a node-finder and as a timeout routine.
- */
-static PList *
-find_node (PORT_T dport, ADDR_T daddr, PORT_T sport, ADDR_T saddr)
-{
-  time_t now = time (NULL);
-  PList *node = ports[dport].next;
-
-  while (node) {
-    /* What's the optimal order for these, I wonder? */
-    if ((node->sport == sport) && (node->saddr == saddr) &&
-	(node->daddr == daddr)) {
-      return node;
-    }
-    /* Timeout stanza. */
-    if (timeout && node->timeout && (now - node->timeout > timeout)) {
-      PList *nnode = node->next;
-      ++stats[s_timeout];
-      END_NODE (node, dport, "TIMEOUT");
-      node = nnode;
-    } else {
-      node = node->next;
-    }
-  }
-  return node;
-}
 
 int
 main (int argc, char **argv)
@@ -222,7 +189,7 @@ main (int argc, char **argv)
     int i;
 
     /* Add an option for 'tee'ing to a file. */
-    while ((opt = getopt (argc, argv, "F:O:T:c:d:i:o:t:Cansv")) != -1) {
+    while ((opt = getopt (argc, argv, "F:O:T:c:d:i:o:t:Canrsv")) != -1) {
       switch (opt) {
       case 'C':
 	colorize = 1;
@@ -258,15 +225,21 @@ main (int argc, char **argv)
 	of_methods = to_file;
       case 'O':
 	of_methods |= to_file;
+#if 0
 	/* Still working on other filters.... */
-/* 	filter = sf_filter; */
-/* 	if_read = if_read_ip_raw; */
+	filter = sf_filter;
+	if_read = if_read_ip_raw;
+#endif
 	strncpy (of_name, optarg, MAXNAMLEN);
 
 	if (!(of_p = fopen (of_name, "a"))) {
 	  perror ("Cannot open output file");
 	  exit (errno);
 	}
+	break;
+      case 'r':
+	filter = shm_filter;
+	shm_setup ();
 	break;
       case 's':
 	squash_output = 1;
@@ -302,9 +275,20 @@ main (int argc, char **argv)
     fputs ("Must specify some ports!\n", stderr);
     return 1;
   }
-  if_open (nolocal);
-  signal (SIGQUIT, *if_close);
-  signal (SIGTERM, *if_close);
+  if (sigfillset (&blockset) < 0) {
+    perror ("sigfillset");
+    exit (errno);
+  }
+  /* Need sanity checks on sigaction() return values. */
+  sigact.sa_mask = blockset;
+#ifndef SIG_STUPIDITY
+# define SIG_STUPIDITY 0
+#endif
+  sigact.sa_flags = SIG_STUPIDITY;
+  sigact.sa_handler = *if_close;
+  if_open (nolocal);		/* Itty-bitty window here. */
+  sigaction (SIGQUIT, &sigact, NULL);
+  sigaction (SIGTERM, &sigact, NULL);
   /* Initialize cache. */
   if (!(cache = (PList *)malloc (sizeof (PList)))) {
     perror ("malloc");
@@ -312,10 +296,13 @@ main (int argc, char **argv)
   }
   cache->next = NULL;
   EXPAND_CACHE;			/* Get ready for first packet. */
-  signal (SIGINT, dump_conns);
-  signal (SIGHUP, dump_conns);
-  signal (SIGUSR1, show_state);
-  signal (SIGUSR2, show_conns);
+  sigact.sa_handler = dump_conns;
+  sigaction (SIGINT, &sigact, NULL);
+  sigaction (SIGHUP, &sigact, NULL);
+  sigact.sa_handler = show_state;
+  sigaction (SIGUSR1, &sigact, NULL);
+  sigact.sa_handler = show_conns;
+  sigaction (SIGUSR2, &sigact, NULL);
   if_read (*filter);		/* Main loop. */
   if_close (0);			/* Not reached. */
   return -1;
@@ -326,7 +313,7 @@ main (int argc, char **argv)
  *
  * Output of two-way monitoring when not colorizing looks ugly; needs work.
  */
-static void
+void
 dump_node (const PList *node, const char *reason, FILE *fh)
 {
   UCHAR data, lastc = 0;
@@ -416,124 +403,3 @@ dump_node (const PList *node, const char *reason, FILE *fh)
   fputs ("\n========================================================================\n", fh);
   fflush (fh);
 }
-
-
-/*
- * Various filtering routines.  Should probably be moved to a separate
- * file, perhaps to a library for use in other related app's that I'm
- * likely to hack out.
- */
-
-/*
- * "Real-time" filter.
- *
- * Finds the packets we're interested in and does fun things with them.
- *
- * Need to check FIN/RST packets from remote end (e.g. connection
- * refused), even when not in two-way mode.
- *
- * Should probably have two copies of this: a "normal" one and one that
- * can catch connections "late."
- */
-static void
-rt_filter (UCHAR *buf, int len)
-{
-  enum { data_to = 0, data_from = 8 };
-  IPhdr *iph = (IPhdr *)buf;
-
-#if defined(DEBUG) || !defined(USING_BPF)
-  if (IPPROT (iph) != TCPPROT) { /* Only looking at TCP/IP right now. */
-# ifdef USING_BPF
-    fprintf (stderr, "\a*** A non-TCP packet snuck through the filter!\n");
-    ++non_tcp;
-# endif /* USING_BPF */
-    return;
-  } else {
-#endif /* DEBUG || !USING_BPF */
-    TCPhdr *tcph = (TCPhdr *)&buf[IPHLEN (iph)];
-    PORT_T dport = ntohs (DPORT (tcph)), sport = ntohs (SPORT (tcph));
-
-    if (dport > hiport || !ports[dport].port) {
-      if (sport <= hiport && ports[sport].twoway) {
-	ADDR_T daddr = DADDR (iph), saddr = SADDR (iph);
-	PList *node = find_node (sport, saddr, dport, daddr); /* Backwards. */
-
-	if (node) {
-	  ++node->pkts[pkt_from];
-	  ADD_DATA (node, &buf[IPHLEN (iph) + DOFF (tcph)], iph, tcph,
-		    data_from);
-
-	  if (FINRST (tcph)) {
-	    ++stats[s_finrst];
-	    END_NODE (node, sport, "<-FIN/RST");
-	  }
-	}
-      }
-    } else {
-      ADDR_T daddr = DADDR (iph), saddr = SADDR (iph);
-      PList *node = find_node (dport, daddr, sport, saddr);
-
-      if (!node) {
-	/* I'll probably need to add all_conns detection both ways. */
-	if (SYN (tcph)) {
-	  if (verbose) {
-	    MENTION (dport, daddr, sport, saddr, "New connection");
-	  }
-	  ADD_NODE (dport, daddr, sport, saddr, with_syn,
-		    &buf[IPHLEN (iph) + DOFF (tcph)], iph, tcph, data_to);
-	} else if (all_conns && !FINRST (tcph)) {
-	  /*
-	   * Bug: if this is the ACK between the two FIN's for this
-	   * connection, we'll get an erroneous (two-packet) connection
-	   * track.  Need to save state here somehow...blah.
-	   */
-	  if (verbose) {
-	    MENTION (dport, daddr, sport, saddr, "Detected 'late'");
-	  }
-	  ADD_NODE (dport, daddr, sport, saddr, without_syn,
-		    &buf[IPHLEN (iph) + DOFF (tcph)], iph, tcph, data_to);
-	}
-      } else {
-	++node->pkts[pkt_to];
-	ADD_DATA (node, &buf[IPHLEN (iph) + DOFF (tcph)], iph, tcph, data_to);
-
-	if (FINRST (tcph)) {
-	  ++stats[s_finrst];
-	  END_NODE (node, dport, "FIN/RST->");
-	}
-      }
-    }
-#if defined(DEBUG) || !defined(USING_BPF)
-  }
-#endif /* DEBUG || !USING_BPF */
-}
-
-/*
- * "Save-file" filter.
- */
-#if 0
-static void
-sf_filter (UCHAR *buf, int len)
-{
-  static int of_fd;
-  IPhdr *iph = (IPhdr *)buf;
-
-  if (!of_fd) {		/* Move this--don't want in loop! */
-    if ((of_fd = open (of_name, O_CREAT | O_EXCL | O_WRONLY, 0600)) < 0) {
-      int err = errno;
-
-      perror ("open");
-      if_close (0);
-      exit (err);
-    }
-  }
-  if (IPPROT (iph) != TCPPROT) {
-    return;
-  } else {
-    printf ("about to write\n");
-    if (write (of_fd, &buf, len) != len) {
-      perror ("write");
-    }
-  }
-}
-#endif
