@@ -1,9 +1,11 @@
 /* $Id$ */
 
+#include <errno.h>
 #include <getopt.h>
 #include <netinet/ip.h>
-#include <netinet/protocols.h>
+#define __FAVOR_BSD		/* Pick up "old" tcphdr struct for now. */
 #include <netinet/tcp.h>
+#include "config.h"
 
 /*
  * General definitions.
@@ -25,7 +27,6 @@
 #define SADDR(X) ((X)->saddr)
 #define IPHLEN(X) ((X)->ihl * 4)
 #define IPLEN(X) ((X)->tot_len)
-#define TCPPROT IP_TCP
 
 /*
  * TCP protocol header definitions.
@@ -47,7 +48,7 @@
 /*
  * Data types.
  */
-typedef __u32 ADDR_T;
+typedef u_int32_t ADDR_T;
 typedef u_short PORT_T;
 typedef u_char UCHAR;
 typedef unsigned short int UDATA;
