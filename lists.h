@@ -77,7 +77,7 @@ enum { pkt_to, pkt_from };
 
 #define ADD_NODE(DPORT, DADDR, SPORT, SADDR) { \
   PList *new; \
-  if (!cache->next) { \
+  if (!cache_size) { \
     EXPAND_CACHE; \
   } \
   new = cache->next; \
