@@ -7,8 +7,8 @@ on.  The tty bit is not yet supported.
 Allow run-time selection of what addresses to monitor, and (eventual)
 optional specification of a tty for each address' data to be printed on.
 
-The tty-per-port and tty-per-address options will be mutually exclusive,
-at least initially.
+The tty-per-port and tty-per-address options will probably be mutually
+exclusive, at least initially.
 
 
 Later:
