@@ -8,17 +8,19 @@ typedef struct PList {
   struct PList *next, *prev;
   ADDR_T daddr, saddr;
   PORT_T dport, sport;		/* dport redundant, but saves some arg passes */
-  UDATA *data;
-  UINT dlen, pkts;
+  UDATA *data;			/* 2:1 byte ratio for data; gives direction. */
+  UINT dlen, pkts[2];
   time_t stime, timeout;
 } PList;
 
 /* Pseudo-hash. */
 typedef struct Ports {
-  int port;
-  int twoway;
+  short int port;
+  short int twoway;
   PList *next;
 } Ports;
+
+enum { pkt_to, pkt_from };
 
 /*
  * Major functionality is provided by these macros.
@@ -58,11 +60,11 @@ typedef struct Ports {
 }
 
 #define ADD_DATA(NODE, BUF, IPH, TCPH, SHIFT) { \
+  int i = 0; \
   int blen = ntohs (IPLEN((IPH))) - IPHLEN((IPH)) - DOFF((TCPH)); \
   int todo = ((NODE)->dlen + blen > maxdata) ? maxdata - (NODE)->dlen : blen; \
-  int i; \
-  for (i = 0; i < todo; i++) { \
-    (NODE)->data[(NODE)->dlen + i] = (UDATA)((BUF)[i] << (SHIFT)); \
+  while (i < todo) { \
+    (NODE)->data[(NODE)->dlen + i] = (UDATA)((BUF)[i++]) << (SHIFT); \
   } \
   (NODE)->dlen += todo; \
   if ((NODE)->dlen == maxdata) { \
@@ -86,7 +88,8 @@ typedef struct Ports {
   new->saddr = (SADDR); \
   new->dport = (DPORT); \
   new->sport = (SPORT); \
-  new->pkts = 1; \
+  new->pkts[pkt_to] = 1; \
+  new->pkts[pkt_from] = 0; \
   new->dlen = 0; \
   memset (new->data, 0, sizeof (UDATA) * maxdata); \
   time (&new->stime); \
