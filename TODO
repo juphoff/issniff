@@ -1,3 +1,5 @@
+* Finish Solaris port.
+
 * Add native command-line address selection.
 
 * Add an rc file capability for default (no argument) usage: ~/.issniffrc
