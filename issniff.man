@@ -192,7 +192,7 @@ SunOS: 4.1.2.
 .br
 Solaris: 2.5 (currently under development).
 .SH AUTHOR
-This code and documentation is Copyright (C) 1996-1999 Jeffrey A. Uphoff
-<juphoff@transmeta.com>.
+This code and documentation is Copyright (C) 1996-1999, 2004
+Jeffrey A. Uphoff <juphoff@kjsl.com>.
 .br
 All rights reserved.
