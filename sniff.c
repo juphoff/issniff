@@ -13,8 +13,9 @@
 # include "linux.h"
 #endif
 
-/* Not finished: SunOS code not yet distributed, and messy!. */
+/* Almost finished. */
 #ifdef __sun__
+# define USING_BPF
 # include <unistd.h>
 # include "sunos.h"
 #endif
@@ -46,9 +47,13 @@ static int timeout = IS_TIMEOUT;
 static int verbose = 0;
 static PList *cache;
 static Ports *ports;
-static int stats[] = { 0, 0, 0, 0 };
+static int stats[] = { 0, 0, 0 };
 
-enum { s_tot, s_finrst, s_maxdata, s_timeout };
+enum { s_finrst, s_maxdata, s_timeout };
+
+#if defined(DEBUG) && defined(USING_BPF)
+static int non_tcp = 0;
+#endif /* DEBUG && USING_BPF */
   
 /*
  * Local function prototypes.
@@ -134,8 +139,7 @@ show_state (int sig)
 *  Squashed output: %s\n\
 *  Verbose mode: %s\n\
 *  Ted Turner mode (colorization): %s\n\
-*  Stats:\n\
-*    Total connections:  %d\n\
+*  Connection stats:\n\
 *    FIN/RST terminated: %d\n\
 *    Exceeded data size: %d\n\
 *    Exceeded timeout:   %d\n\
@@ -152,7 +156,6 @@ show_state (int sig)
 	   YN (squash_output),
 	   YN (verbose),
 	   YN (colorize),
-	   stats[s_tot],
 	   stats[s_finrst],
 	   stats[s_maxdata],
 	   stats[s_timeout]);
@@ -166,6 +169,11 @@ show_state (int sig)
       }
     }
   }
+#if defined(DEBUG) && defined(USING_BPF)
+  fprintf (stderr,
+	   "\n\n*  Number of non-TCP packets that have snuck through: %d",
+	   non_tcp);
+#endif /* DEBUG && USING_BPF */
   fputs ("\n\n", stderr);
 }
 
@@ -211,11 +219,15 @@ filter (UCHAR *buf)
   enum { data_to = 0, data_from = 8 };
   IPhdr *iph = (IPhdr *)buf;
 
-#ifndef USING_BPF
+#if defined(DEBUG) || !defined(USING_BPF)
   if (IPPROT (iph) != TCPPROT) { /* Only looking at TCP/IP right now. */
+# ifdef USING_BPF
+    fprintf (stderr, "*** A non-TCP packet snuck through the filter!\n");
+    ++non_tcp;
+# endif /* USING_BPF */
     return;
   } else {
-#endif /* USING_BPF */
+#endif /* DEBUG || !USING_BPF */
     TCPhdr *tcph = (TCPhdr *)(buf + IPHLEN (iph));
     PORT_T dport = ntohs (DPORT (tcph)), sport = ntohs (SPORT (tcph));
 
@@ -257,9 +269,9 @@ filter (UCHAR *buf)
 	}
       }
     }
-#ifndef USING_BPF
+#if defined(DEBUG) || !defined(USING_BPF)
   }
-#endif /* USING_BPF */
+#endif /* DEBUG || !USING_BPF */
 }
 
 int
@@ -295,7 +307,7 @@ main (int argc, char **argv)
 	}
 	break;
       case 'n':
-	nolocal = 1;
+	nolocal = 1;		/* Option only matters for Linux right now. */
 	break;
       case 's':
 	squash_output = 1;
