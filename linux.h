@@ -10,6 +10,7 @@
  */
 #define IF_BUFSIZ 2048
 #define OS_NOLOCAL 0
+#define SIG_STUPIDITY SA_RESTART
 
 /*
  * Misc. definitions.
