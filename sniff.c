@@ -14,12 +14,13 @@
  * Global variables.
  */
 char if_name[MAXNAMLEN];	/* Remove from global list. */
+PORT_T hiport = 0;
 int all_conns = 0;
 int cache_increment = CACHE_INC;
 int cache_max = 0;
 int cache_size = 0;
 int curr_conn = 0;
-int hiport = 0;
+/* int hiport = 0; */
 int maxdata = IS_MAXDATA;
 int of_methods = to_stdout;
 int timeout = IS_TIMEOUT;
@@ -78,7 +79,7 @@ static void (*if_read) (void (*) (UCHAR *, int)) = if_read_ip_net;
 static void
 dump_conns (int sig)
 {
-  int i;
+  PORT_T i;
   PList *node;
 
   for (i = 0; i <= hiport; i++) {
@@ -102,7 +103,7 @@ static void
 show_conns (int sig)
 {
   char *timep;
-  int i;
+  PORT_T i;
   PList *node;
 
   fputs ("\n** Active connections:\n", stderr);
@@ -126,7 +127,7 @@ show_conns (int sig)
 static void
 show_state (int sig)
 {
-  int i;
+  PORT_T i;
 
   fprintf (stderr, "\n\
 ** Current state:\n\
@@ -281,7 +282,8 @@ main (int argc, char **argv)
       if (!strncmp (argv[i], "+addr", 5)) {
 	break;
       } else {
-	int thisport = argv[i][0] == '+' ? atoi (&argv[i][1]) : atoi (argv[i]);
+	PORT_T thisport =
+	  (PORT_T)(argv[i][0] == '+' ? atoi (&argv[i][1]) : atoi (argv[i]));
 	hiport = thisport > hiport ? thisport : hiport;
       }
     }
@@ -297,9 +299,11 @@ main (int argc, char **argv)
 	addr_matching = i;
 	break;
       } else {
-	int thisport = argv[i][0] == '+' ? atoi (&argv[i][1]) : atoi (argv[i]);
+	PORT_T thisport =
+	  (PORT_T)(argv[i][0] == '+' ? atoi (&argv[i][1]) : atoi (argv[i]));
 	ports[thisport].port = 1;
 	ports[thisport].twoway = argv[i][0] == '+' ? 1 : 0;
+/* 	ports[thisport].next = (PList *)NULL; */ /* JAU: From sol port...why? */
       }
     }
   } else {
