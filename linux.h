@@ -12,6 +12,7 @@
 #define SOCKPROT 0x300
 #define UCHAR u_char
 #define UINT u_int
+#define UDATA unsigned short int
 
 /*
  * IP protocol header definitions.
