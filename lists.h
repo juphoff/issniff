@@ -22,6 +22,24 @@ typedef struct Ports {
 /*
  * Major functionality is provided by these macros.
  */
+#define EXPAND_CACHE { \
+  int i; \
+  UCHAR *blk; \
+  PList *cnode = cache; \
+  if (!(blk = (UCHAR *)malloc ((sizeof (PList) + sizeof (UCHAR) * maxdata) * \
+			       cache_increment))) { \
+    perror ("malloc"); \
+    exit (errno); \
+  } \
+  for (i = 0; i < cache_increment; i++, blk += sizeof (UCHAR) * maxdata) { \
+    cnode->next = (PList *)blk; \
+    cnode->next->data = (blk += sizeof (PList)); \
+    cnode = cnode->next; \
+  } \
+  cache_max += cache_increment; \
+  cache_size += cache_increment; \
+}
+
 #define END_NODE(NODE, PORT, REASON) { \
   dump_node((NODE), (REASON)); \
   if ((NODE)->next) { \
@@ -53,7 +71,7 @@ typedef struct Ports {
 #define ADD_NODE(DPORT, DADDR, SPORT, SADDR) { \
   PList *new; \
   if (!cache->next) { \
-    expand_cache (); \
+    EXPAND_CACHE; \
   } \
   new = cache->next; \
   cache->next = cache->next->next; \
