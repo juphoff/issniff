@@ -24,9 +24,12 @@
 static int cache_increment = CACHE_INC;
 static int cache_max = 0;
 static int cache_size = 0;
+static int colorfrom = 36;	/* Make #define */
+static int colorto = 33;	/* Ditto. */
 static int curr_conn = 0;
 static int hiport = 0;
 static int maxdata = IS_MAXDATA;
+static int colorize = 0;
 static int squash_output = 0;
 static int timeout = IS_TIMEOUT;
 static int verbose = 0;
@@ -85,6 +88,7 @@ dump_state (int sig)
 *  Idle timeout (seconds): %d\n\
 *  Squashed output: %s\n\
 *  Verbose mode: %s\n\
+*  Ted Turner mode (colorization): %s\n\
 *  Monitoring ports:",
 	   get_interface (),
 	   curr_conn,
@@ -94,7 +98,8 @@ dump_state (int sig)
 	   maxdata,
 	   timeout,
 	   YN (squash_output),
-	   YN (verbose));
+	   YN (verbose)
+	   YN (colorize));
 
   for (i = 0; i <= hiport; i++) {
     if (ports[i].port) {
@@ -163,22 +168,33 @@ find_node (PORT_T dport, ADDR_T daddr, PORT_T sport, ADDR_T saddr)
 
 /*
  * Finds the packets we're interested in and does fun things with them.
+ * Made more complicated by adding two-way monitoring capabilities on
+ * selectable ports.
  */
 void
 filter (UCHAR *buf)
 {
+  enum { data_to = 0, data_from = 8 };
   IPhdr *iph = (IPhdr *)buf;
 
-  if (IPPROT(iph) != TCPPROT) { /* Only looking at TCP right now. */
+  if (IPPROT(iph) != TCPPROT) { /* Only looking at TCP/IP right now. */
     return;
   } else {
     TCPhdr *tcph = (TCPhdr *)(buf + IPHLEN(iph));
-    ADDR_T dport = ntohs (DPORT (tcph));
+    PORT_T dport = ntohs (DPORT (tcph)), sport = ntohs (SPORT (tcph));
 
     if (dport > hiport || !(ports + dport)->port) {
-      return;
+      if (sport <= hiport && (ports + sport)->twoway) {
+	/* Back filter. */
+	ADDR_T daddr = DADDR (iph), saddr = SADDR (iph);
+	PList *node = find_node (sport, saddr, dport, daddr); /* Backwards. */
+
+	if (node) {
+	  ADD_DATA (node, buf + IPHLEN (iph) + DOFF (tcph), iph, tcph,
+		    data_from);
+	}
+      }
     } else {
-      PORT_T sport = ntohs (SPORT (tcph));
       ADDR_T daddr = DADDR (iph), saddr = SADDR (iph);
       PList *node = find_node (dport, daddr, sport, saddr);
 
@@ -196,7 +212,7 @@ filter (UCHAR *buf)
 	if (FINRST(tcph)) {
 	  END_NODE (node, dport, "FIN/RST");
 	} else {
-	  ADD_DATA (node, buf + IPHLEN(iph) + DOFF(tcph), iph, tcph);
+	  ADD_DATA (node, buf + IPHLEN (iph) + DOFF (tcph), iph, tcph, data_to);
 	}
       }
     }
@@ -210,8 +226,19 @@ main (int argc, char **argv)
     char opt;
     int i;
     
-    while ((opt = getopt (argc, argv, "c:d:i:t:sv")) != -1) {
+    while ((opt = getopt (argc, argv, "F:T:c:d:i:t:Csv")) != -1) {
       switch (opt) {
+      case 'C':
+	colorize = 1;
+	break;
+      case 'F':
+	colorfrom = atoi (optarg);
+	colorize = 1;
+	break;
+      case 'T':
+	colorto = atoi (optarg);
+	colorize = 1;
+	break;
       case 'c':
 	cache_increment = CHKOPT (CACHE_INC);
 	break;
@@ -280,9 +307,11 @@ main (int argc, char **argv)
 static void
 dump_node (const PList *node, const char *reason)
 {
+  enum { none, from_color, to_color };
+  int current_color = none;
   struct in_addr ia;
   UCHAR lastc = 0;
-  UCHAR *data = node->data;
+  UDATA *data = node->data;
   UINT dlen = node->dlen;
   char *timep = ctime (&node->stime);
   time_t now = time (NULL);
@@ -299,6 +328,20 @@ dump_node (const PList *node, const char *reason)
   puts ("------------------------------------------------------------------------");
 
   while (dlen-- > 0) {
+    /* Ack, can't tell which way NULL bytes came from this way. */
+    if (*data > 0x00ff) {
+      *data >>= 8;
+
+      if (colorize && current_color != from_color) {
+	printf ("%c[%dm", 0x1b, colorfrom);
+	current_color = from_color;
+      }
+    } else {
+      if (colorize && current_color != to_color) {
+	printf ("%c[%dm", 0x1b, colorto);
+	current_color = to_color;
+      }
+    }
     if (*data >= 127) {
       printf ("<%d>", *data);
     } else if (*data >= 32) {
@@ -311,11 +354,13 @@ dump_node (const PList *node, const char *reason)
 	}
       case '\r':
       case '\n':
+	/* Can't tell which end a \n came from either. */
 	if (!squash_output || !((lastc == '\r') || (lastc == '\n'))) {
 	  putchar ('\n');
 	}
 	break;
       case '\t':
+	/* Add an option to print the control code for this? */
 	putchar ('\t');
 	break;
       default:
@@ -324,6 +369,9 @@ dump_node (const PList *node, const char *reason)
       }
     }
     lastc = *data++;
+  }
+  if (colorize && current_color != none) {
+    printf ("%c[0m", 0x1b);
   }
   puts ("\n========================================================================");
 }
