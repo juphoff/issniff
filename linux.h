@@ -1,4 +1,4 @@
-/* $Id$ */
+/* linux.h,v 2.3 1996/05/30 04:54:36 juphoff Exp */
 
 #include <netinet/ip.h>
 #include <netinet/protocols.h>
@@ -8,8 +8,8 @@
  * General definitions.
  */
 #define IF_BUFSIZ 2048
-#define DEFAULT_INTERFACE "eth0"
-#define SOCKPROT 0x300
+#define IF_DETECT_BUFSIZ 1024	/* Big enough for 25 interfaces + slop. */
+#define SOCKPROT 0x300		/* Don't fuck with me. */
 #define UCHAR u_char
 #define UINT u_int
 #define UDATA unsigned short int
