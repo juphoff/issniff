@@ -33,7 +33,8 @@ WFLAGS	= -ansi -pedantic -Wall -Wcast-align -Wcast-qual -Winline \
 #CFLAGS	= -O6 -pipe -fomit-frame-pointer $(DEBUGS) $(DEFINES) $(WFLAGS)
 #LDFLAGS	= -s
 # For development/debugging.
-CFLAGS	= -g -O6 -fomit-frame-pointer $(DEBUGS) $(DEFINES) $(WFLAGS)
+CFLAGS	= -g -O6 -fomit-frame-pointer -fno-strength-reduce \
+	   $(DEBUGS) $(DEFINES) $(WFLAGS)
 LDFLAGS	= -g
 
 .PHONY:	all clean distclean realclean
