@@ -18,10 +18,10 @@ CC	= gcc
 # Typical way to generate a.out binaries with an ELF-defaulting compiler.
 #CC	= gcc -b i486-linuxaout
 
-# The Ted Ts'o express.  :)~
-WFLAGS	= -ansi -pedantic -Wall -Wwrite-strings -Wpointer-arith -Wcast-qual \
-	  -Wcast-align -Wtraditional -Wstrict-prototypes -Wmissing-prototypes \
-	  -Wnested-externs -Winline -Wshadow
+# The Ted Ts'o express.  Noisy under e.g. SunOS.
+WFLAGS	= -ansi -pedantic -Wall -Wcast-align -Wcast-qual -Winline \
+	  -Wmissing-prototypes -Wnested-externs -Wpointer-arith -Wshadow \
+	  -Wstrict-prototypes -Wwrite-strings 
 
 # For normal use.
 #CFLAGS	= -O6 -pipe -fomit-frame-pointer $(DEBUGS) $(DEFINES) $(WFLAGS)
