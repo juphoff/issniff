@@ -20,6 +20,7 @@
  */
 static int byteswapped = 0;
 static int iface;
+static int llinkhdr_len = sizeof (ETHhdr);
 
 /*
  * Misc. local macros.
@@ -117,14 +118,12 @@ if_read_ip_pcap (void (*filter) (UCHAR *, int))
   if (!iface) {
     if_read_ip_pcap_pipe (filter);
   }
-  /* Move me! */
-  linkhdr_len = 14;
-
   for (;;) {
     if ((bytes = read (iface, &hdr, sizeof (struct pcap_pkthdr))) !=
 	sizeof (struct pcap_pkthdr)) {
       if (bytes == 0) {
-	fprintf (stderr, "\n** End of file...dumping what's left.\n\n");
+	fprintf (stderr,
+		 "\n** End of file...dumping what's left in memory.\n\n");
 	raise (SIGINT);		/* FIX ME! */
       }
       perror ("read (pcap_pkthdr)");
@@ -137,7 +136,7 @@ if_read_ip_pcap (void (*filter) (UCHAR *, int))
       return;
     }
     if (ETHTYPE ((ETHhdr *)buf) == IPTYPE) {
-      filter (&buf[linkhdr_len], bytes - linkhdr_len);
+      filter (&buf[llinkhdr_len], bytes - llinkhdr_len);
     }
   }
 }
@@ -152,9 +151,6 @@ if_read_ip_pcap_pipe (void (*filter) (UCHAR *, int))
   UCHAR buf[IF_BUFSIZ];
   struct pcap_pkthdr hdr;
 
-  /* Move me! */
-  linkhdr_len = 14;
-
   for (;;) {
     for (bytes = 0; bytes < sizeof (struct pcap_pkthdr);
 	 bytes += read (iface, &buf[bytes],
@@ -166,7 +162,7 @@ if_read_ip_pcap_pipe (void (*filter) (UCHAR *, int))
 	 bytes += read (iface, &buf[bytes], FIXLONG (hdr.caplen) - bytes));
 
     if (ETHTYPE ((ETHhdr *)buf) == IPTYPE) {
-      filter (&buf[linkhdr_len], bytes - linkhdr_len);
+      filter (&buf[llinkhdr_len], bytes - llinkhdr_len);
     }
   }
 }
