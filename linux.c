@@ -1,5 +1,6 @@
 /* $Id$ */
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,14 +12,35 @@
 #include "linux.h"
 #include "sniff.h"
 
+/*
+ * Local variables.
+ */
 static int iface;
+static int linkhdr_len;
 static struct ifreq ifr;
+/* Linux interface type prefixes and their link-level packet header sizes. */
+static struct {
+  const char *type;
+  int hdr_len;
+} if_types[] = {
+  { "eth", sizeof (struct ethhdr) },
+  { "sl", 0 },
+  { "lo", sizeof (struct ethhdr) },
+  { "dummy", sizeof (struct ethhdr) },
+  /* Still need PPP. */
+  { NULL }
+};
+
+/*
+ * Local function prototypes.
+ */
+static char *if_detect (void);
 
 /*
  * Signal handler.
  */
 void
-close_interface (int sig)
+if_close (int sig)
 {
   ifr.ifr_flags &= ~IFF_PROMISC;
 
@@ -31,30 +53,49 @@ close_interface (int sig)
 }
 
 char *
-get_interface (void)
+if_getname (void)
 {
   return ifr.ifr_name;
 }
 
-void
-set_interface (const char *interface)
+int
+if_setname (const char *interface)
 {
-  strncpy (ifr.ifr_name, interface, IFNAMSIZ);
+  int i = -1;
+
+  while (if_types[++i].type) {
+    if (!strncmp (if_types[i].type, interface, strlen (if_types[i].type))) {
+      linkhdr_len = if_types[i].hdr_len;
+      strncpy (ifr.ifr_name, interface, IFNAMSIZ);
+      return 0;
+    }
+  }
+  return -1;
 }
 
 void
-open_interface (void)
+if_open (void)
 {
   if ((iface = socket (AF_INET, SOCK_PACKET, SOCKPROT)) == -1) {
     perror ("socket");
     exit (errno);
   }
   if (!*ifr.ifr_name) {
-    set_interface (DEFAULT_INTERFACE);
+    char *interface = if_detect ();
+
+    if (!interface) {
+      fprintf (stderr, "Cannot auto-detect a default interface.  Odd, that.\n");
+      exit (1);
+    }
+    assert (if_setname (interface) == 0);
   }
   if (ioctl (iface, SIOCGIFFLAGS, &ifr) == -1) {
     perror ("ioctl (SIOCGIFFLAGS)");
     exit (errno);
+  }
+  if (!(ifr.ifr_flags & IFF_UP)) {
+    fprintf (stderr, "Interface %s not up.\n", ifr.ifr_name);
+    exit (1);
   }
   ifr.ifr_flags |= IFF_PROMISC;
 
@@ -62,20 +103,51 @@ open_interface (void)
     perror ("ioctl (SIOCSIFFLAGS)");
     exit (errno);
   }
-  fprintf (stderr, "Listening on %s.\n\n", ifr.ifr_name);
+  fprintf (stderr, "Version %s listening on %s.\n\n", IS_VERSION, ifr.ifr_name);
+}
+
+static char *
+if_detect (void)
+{
+  char ifb[IF_DETECT_BUFSIZ];
+  struct ifconf ifs;
+
+  ifs.ifc_len = sizeof (ifb);
+  memset (ifs.ifc_buf = (caddr_t)&ifb, 0, sizeof (ifb));
+
+  if (ioctl (iface, SIOCGIFCONF, &ifs) == -1) {
+    perror ("ioctl (SIOCGIFCONF)");
+    return NULL;
+  } else {
+    int i = -1;
+
+    while (if_types[++i].type) {
+      struct ifreq *ifrp = ifs.ifc_req;
+
+      while (*ifrp->ifr_name) {
+	if (!strncmp (if_types[i].type, ifrp->ifr_name,
+		      strlen (if_types[i].type))) {
+	  return ifrp->ifr_name;
+	}
+	++ifrp;
+      }
+    }
+    return NULL;
+  }
 }
 
 /*
- * I DON'T like this approach.  Blasted SunOS madness....
+ * I DON'T like this approach.  Blasted SunOS madness...I may just pitch
+ * portability worries altogether and concentrate on Linux alone.
  */
 void
-ifread (void)
+if_read (void)
 {
   UCHAR buf[IF_BUFSIZ];
 
   for (;;) {
     if (read (iface, buf, IF_BUFSIZ) >= 0) {
-      filter (buf + sizeof (struct ethhdr));
+      filter (buf + linkhdr_len); /* Function call, over and over and over. */
     }
   }
 }
