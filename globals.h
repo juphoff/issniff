@@ -12,7 +12,7 @@
 /*
  * Global variables.
  */
-enum { s_finrst, s_maxdata, s_timeout, s_late };
+enum { s_fin, s_rst, s_maxdata, s_timeout, s_late };
 enum { to_stdout = 1, to_file = 2 };
 extern int all_conns;
 extern int cache_increment;
