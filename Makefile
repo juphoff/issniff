@@ -5,11 +5,13 @@
 
 include .version
 
-# *DEFINE THE OS*
-OS	= linux
+# Only works for Linux right now--make generic!
+OS	:= $(shell uname | tr '[A-Z]' '[a-z]')
+
+# *DEFINE THE OS* (if not Linux)
 #OS	= osf		# Works.
 #OS	= sunos		# Works.
-#OS	= solaris	# Pre-alpha: still SEGV's mysteriously.
+#OS	= sol		# Pre-alpha: still SEGV's mysteriously.
 
 # Set level of DEBUG.
 DEBUGS	= -DDEBUG
@@ -17,6 +19,7 @@ DEBUGS	= -DDEBUG
 # OS-specific defines.
 DEFINES_linux	= -D_POSIX_SOURCE -DSUPPORT_TCPDUMP
 DEFINES_sunos	= -D__USE_FIXED_PROTOTYPES__
+DEFINES_sol	= -D__EXTENSIONS__
 
 # General definitions.
 DEFINES	= $(DEFINES_$(OS)) -DIS_VERSION=\"$(IS_VERSION)\" -DOSVER=\"$(OS)\"
@@ -44,16 +47,18 @@ CFLAGS_linux	= -fomit-frame-pointer -fno-strength-reduce
 CFLAGS	= -g -O6 $(CFLAGS_$(OS)) $(DEBUGS) $(DEFINES) $(WFLAGS)
 LDFLAGS	= -g
 
-# .PHONY:	all clean do-all distclean realclean world
-
 # OS-specific feature support.
 SRCS_linux	= pcap-tcpdump.c
+
+# OS-specific libraries.
+LIBS_sol	= -lsocket -lnsl
 
 PROG	= issniff
 MANEXT	= 8
 SRCS	= $(OS).c filter.c if.c shm.c sniff.c $(SRCS_$(OS))
 MANSRC	= $(PROG).man
 OBJS	= $(SRCS:.c=.o)
+LIBS	= $(LIBS_$(OS))
 MANUAL	= $(MANSRC:.man=.$(MANEXT))
 
 all:	do-all
@@ -73,7 +78,7 @@ dep depend:
 	$(CPP) -M $(DEBUGS) $(DEFINES) $(SRCS) > .depend
 
 $(PROG):	$(OBJS)
-	$(CC) $(LDFLAGS) -o $@ $^
+	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 $(MANUAL):	$(MANSRC) .version
 	$(RM) $@
