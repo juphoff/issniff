@@ -1,9 +1,7 @@
+* Improve signal handling.
+
 * Add command-line address selection.
 
 * Add output tty selection.
 
 * Other things, such as IPC and encrypted transfers.
-
-* SunOS port.
-
-* Improve signal handling.
