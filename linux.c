@@ -18,6 +18,7 @@
 static int iface;
 static int linkhdr_len;
 static struct ifreq ifr;
+
 /* Linux interface type prefixes and their link-level packet header sizes. */
 static struct {
   const char *type;
@@ -76,6 +77,40 @@ if_setname (const char *interface)
   return -1;
 }
 
+/* Consolidate. */
+static char *
+if_detect (void)
+{
+  char ifb[IF_DETECT_BUFSIZ];
+  struct ifconf ifs;
+
+  ifs.ifc_len = sizeof (ifb);
+  memset (ifs.ifc_buf = (caddr_t)&ifb, 0, sizeof (ifb));
+
+  if (ioctl (iface, SIOCGIFCONF, &ifs) == -1) {
+    perror ("ioctl (SIOCGIFCONF)");
+    return NULL;
+  } else {
+    int i = -1;
+
+    while (if_types[++i].type) {
+      struct ifreq *ifrp = ifs.ifc_req;
+
+      while (*ifrp->ifr_name) {
+	if (!strncmp (if_types[i].type, ifrp->ifr_name,
+		      strlen (if_types[i].type))) {
+	  return ifrp->ifr_name;
+	}
+	++ifrp;
+      }
+    }
+    return NULL;
+  }
+}
+
+/*
+ * Linux is easy.
+ */
 void
 if_open (int nolocal)
 {
@@ -114,40 +149,8 @@ if_open (int nolocal)
   }
 }
 
-/* Consolidate. */
-static char *
-if_detect (void)
-{
-  char ifb[IF_DETECT_BUFSIZ];
-  struct ifconf ifs;
-
-  ifs.ifc_len = sizeof (ifb);
-  memset (ifs.ifc_buf = (caddr_t)&ifb, 0, sizeof (ifb));
-
-  if (ioctl (iface, SIOCGIFCONF, &ifs) == -1) {
-    perror ("ioctl (SIOCGIFCONF)");
-    return NULL;
-  } else {
-    int i = -1;
-
-    while (if_types[++i].type) {
-      struct ifreq *ifrp = ifs.ifc_req;
-
-      while (*ifrp->ifr_name) {
-	if (!strncmp (if_types[i].type, ifrp->ifr_name,
-		      strlen (if_types[i].type))) {
-	  return ifrp->ifr_name;
-	}
-	++ifrp;
-      }
-    }
-    return NULL;
-  }
-}
-
 /*
- * I DON'T like this approach.  Blasted SunOS madness...I may just pitch
- * portability worries altogether and concentrate on Linux alone.
+ * Mainly here for portability since other OS's buffer the sniffing.
  */
 void
 if_read (void)
