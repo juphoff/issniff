@@ -18,6 +18,11 @@
 # include "sunos.h"
 #endif
 
+#ifdef __osf__
+# define USING_BPF
+# include "osf.h"
+#endif
+
 #include "sniff.h"
 #include "lists.h"
 
@@ -28,11 +33,12 @@ static int cache_increment = CACHE_INC;
 static int cache_max = 0;
 static int cache_size = 0;
 static int colorfrom = FROM_COLOR;
+static int colorize = 0;
 static int colorto = TO_COLOR;
 static int curr_conn = 0;
 static int hiport = 0;
 static int maxdata = IS_MAXDATA;
-static int colorize = 0;
+static int nolocal = 0;
 static int squash_output = 0;
 static int timeout = IS_TIMEOUT;
 static int verbose = 0;
@@ -61,7 +67,7 @@ dump_conns (int sig)
     signal (SIGHUP, dump_conns);
   }
   for (i = 0; i <= hiport; i++) {
-    if ((node = (ports + i)->next)) {
+    if ((node = ports[i].next)) {
       while (node) {
 	dump_node (node, "SIGNAL");
 	node = node->next;
@@ -88,7 +94,7 @@ show_conns (int sig)
   fputs ("\n** Active connections:\n", stderr);
 
   for (i = 0; i <= hiport; i++) {
-    if ((node = (ports + i)->next)) {
+    if ((node = ports[i].next)) {
       while (node) {
 	timep = ctime (&node->stime);
 	timep[strlen (timep) - 1] = 0; /* Zap newline */
@@ -119,6 +125,7 @@ show_state (int sig)
 *  Cache increment: %d\n\
 *  Max data size (bytes): %d\n\
 *  Idle timeout (seconds): %d\n\
+*  Ignoring local connections/packets: %s\n\
 *  Squashed output: %s\n\
 *  Verbose mode: %s\n\
 *  Ted Turner mode (colorization): %s\n\
@@ -131,6 +138,7 @@ show_state (int sig)
 	   cache_increment,
 	   maxdata,
 	   timeout,
+	   YN (nolocal),
 	   YN (squash_output),
 	   YN (verbose),
 	   YN (colorize));
@@ -153,7 +161,7 @@ show_state (int sig)
 static PList *
 find_node (PORT_T dport, ADDR_T daddr, PORT_T sport, ADDR_T saddr)
 {
-  PList *node = (ports + dport)->next;
+  PList *node = ports[dport].next;
   time_t now = time (NULL);
 
   while (node) {
@@ -188,14 +196,16 @@ filter (UCHAR *buf)
   enum { data_to = 0, data_from = 8 };
   IPhdr *iph = (IPhdr *)buf;
 
+#ifndef USING_BPF
   if (IPPROT (iph) != TCPPROT) { /* Only looking at TCP/IP right now. */
     return;
   } else {
+#endif /* USING_BPF */
     TCPhdr *tcph = (TCPhdr *)(buf + IPHLEN (iph));
     PORT_T dport = ntohs (DPORT (tcph)), sport = ntohs (SPORT (tcph));
 
-    if (dport > hiport || !(ports + dport)->port) {
-      if (sport <= hiport && (ports + sport)->twoway) {
+    if (dport > hiport || !ports[dport].port) {
+      if (sport <= hiport && ports[sport].twoway) {
 	ADDR_T daddr = DADDR (iph), saddr = SADDR (iph);
 	PList *node = find_node (sport, saddr, dport, daddr); /* Backwards. */
 
@@ -230,7 +240,9 @@ filter (UCHAR *buf)
 	}
       }
     }
+#ifndef USING_BPF
   }
+#endif /* USING_BPF */
 }
 
 int
@@ -240,7 +252,7 @@ main (int argc, char **argv)
     char opt;
     int i;
     
-    while ((opt = getopt (argc, argv, "F:T:c:d:i:t:Csv")) != -1) {
+    while ((opt = getopt (argc, argv, "F:T:c:d:i:t:Cnsv")) != -1) {
       switch (opt) {
       case 'C':
 	colorize = 1;
@@ -265,6 +277,9 @@ main (int argc, char **argv)
 	  return 1;
 	}
 	break;
+      case 'n':
+	nolocal = 1;
+	break;
       case 's':
 	squash_output = 1;
 	break;
@@ -275,7 +290,7 @@ main (int argc, char **argv)
 	verbose = 1;
 	break;
       default:
-	fputs ("Usage: issniff [options] port [port...]\n", stderr);
+	fputs ("Usage: issniff [options] [+]port [[+]port ...]\n", stderr);
 	return 1;
       }
     }
@@ -299,7 +314,7 @@ main (int argc, char **argv)
     fputs ("Must specify some ports!\n", stderr);
     return 1;
   }
-  if_open ();
+  if_open (nolocal);
   signal (SIGQUIT, if_close);
   signal (SIGTERM, if_close);
   /* Initialize cache. */
@@ -338,7 +353,7 @@ dump_node (const PList *node, const char *reason)
   printf ("to %s", ctime (&now)); /* Two calls to printf() for a reason! */
   ia.s_addr = node->saddr;
   printf ("Path: %s:%d %s ", inet_ntoa (ia), node->sport, 
-	  (ports + node->dport)->twoway ? "<->" : "->");
+	  ports[node->dport].twoway ? "<->" : "->");
   ia.s_addr = node->daddr;
   printf ("%s:%d\n", inet_ntoa (ia), node->dport);
   printf ("Stat: %d/%d packets (to/from), %d bytes [%s]\n", node->pkts[pkt_to],
@@ -389,7 +404,7 @@ dump_node (const PList *node, const char *reason)
     lastc = data;
   }
   if (colorize && current_color != NO_COLOR) {
-    printf ("%c[0m", 0x1b);
+    printf ("%c[00m", 0x1b);
   }
   puts ("\n========================================================================");
 }
