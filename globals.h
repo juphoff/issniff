@@ -22,7 +22,6 @@ extern int cache_increment;
 extern int cache_max;
 extern int cache_size;
 extern int curr_conn;
-/* extern int hiport; */
 extern int maxdata;
 extern int of_methods;
 extern int timeout;
