@@ -137,8 +137,8 @@ if_open_net (int nolocal)
     exit (errno);
   }
   fprintf (stderr, "Version %s listening on %s.\n\n", IS_VERSION, ifr.ifr_name);
-  /* I want an option for local stuff, but I don't know how to do it yet! */
-  fprintf (stderr, "Warning: locally-originating packets not monitored!\n\n");
+  /* /dev/nit just can't do locally-originated stuff.  Blah. */
+  fprintf (stderr, "Warning: locally-originated packets not monitored!\n\n");
 }
 
 /*
