@@ -75,6 +75,6 @@ maintainer-clean:	distclean
 	$(RM) configure
 
 maintainer-world:	maintainer-clean
-	autoconf
+	autoconf -Wall
 	./configure
 	$(MAKE)
