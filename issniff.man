@@ -1,8 +1,8 @@
 .\" -*- nroff -*-
 .\" $Id$
-.TH issniff 8 "23 April 1999" "Version @@IS_VERSION@@" "NRAO & Transmeta"
+.TH issniff 8 "29 April 2008" "Version @@IS_VERSION@@" "NRAO, Transmeta, rPath"
 .SH NAME
-issniff \- Industrial Strength SNIFFer
+issniff \- Internet Session SNIFFer
 .SH SYNOPSIS
 .B
 issniff
@@ -192,7 +192,7 @@ SunOS: 4.1.2.
 .br
 Solaris: 2.5 (has rough edges--development abandoned).
 .SH AUTHOR
-This code and documentation is Copyright (C) 1996-1999, 2004, 2005
+This code and documentation is Copyright (C) 1996-1999, 2004, 2005, 2008
 Jeffrey A. Uphoff <juphoff@kjsl.com>.
 .br
 All rights reserved.
