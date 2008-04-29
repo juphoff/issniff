@@ -8,7 +8,7 @@
 #include <net/if.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
-#include "linux.h"
+#include "linux-gnu.h"
 #include "sniff.h"
 #include "if.h"
 

@@ -69,6 +69,7 @@ clean:
 
 distclean:	clean
 	$(RM) .depend Makefile config.cache config.h config.log config.status core* *~ \#*
+	$(RM) -r autom4te.cache
 
 # The following are development targets and are not meant for general use.
 maintainer-clean:	distclean
