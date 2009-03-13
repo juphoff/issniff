@@ -1,0 +1,9 @@
+*~
+*.o
+.depend
+Makefile
+config.h
+config.log
+config.status
+issniff
+issniff.8
