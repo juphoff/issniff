@@ -7,3 +7,4 @@ config.log
 config.status
 issniff
 issniff.8
+autom4te.cache
