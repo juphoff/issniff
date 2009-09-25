@@ -14,16 +14,6 @@ extern char *if_detect (int);
 # include <linux/if_ether.h>
 #endif /* __linux__ */
 
-#ifdef __sun__
-# include <net/if.h>
-# include <netinet/in_systm.h>
-# include <netinet/in.h>
-# include <netinet/if_ether.h>
-# ifdef __svr4__ /* Solaris (SunOS 5). */
-#  include <sys/sockio.h>
-# endif /* __svr4__ */
-#endif /* __sun__ */
-
 #ifdef __osf__
 # include <sys/mbuf.h>
 # include <sys/socket.h>

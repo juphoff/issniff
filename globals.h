@@ -5,10 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-/* These two swapped for Solaris. */
 #include OSHEADER
 #include <arpa/inet.h>
-/* End swap. */
 #include "lists.h"
 
 /*

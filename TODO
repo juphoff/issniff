@@ -1,5 +1,5 @@
 * Problems with Linux & glibc--SEGV's.  Change to more "conventional"
-  malloc'ing?  Is this what's causing Solaris to bumble around too?
+  malloc'ing?
 
 * BPF for Linux now that 2.1.x has it.
 
@@ -7,8 +7,6 @@
   with that?!?)
 
 * Finish implementing autoconf.
-
-* Finish Solaris port.
 
 * Add native command-line address selection.
 
