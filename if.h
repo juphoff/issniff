@@ -21,9 +21,6 @@ extern char *if_detect (int);
 # include <netinet/if_ether.h>
 # ifdef __svr4__ /* Solaris (SunOS 5). */
 #  include <sys/sockio.h>
-# else /* SunOS 4. */
-
-extern int ioctl (int, int, caddr_t);
 # endif /* __svr4__ */
 #endif /* __sun__ */
 
