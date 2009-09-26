@@ -24,8 +24,6 @@ typedef struct Ports {
 enum { pkt_to, pkt_from };
 enum { with_syn, without_syn, first_fin };
 
-extern void dump_node (PList *, const char *);
-
 /*
  * Major functionality is provided by these macros.
  */

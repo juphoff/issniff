@@ -11,4 +11,4 @@
  * SHMSEG:	128		32
  */
 
-void shm_setup (void);
+extern void shm_setup (void);
