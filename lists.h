@@ -24,7 +24,7 @@ typedef struct Ports {
 enum { pkt_to, pkt_from };
 enum { with_syn, without_syn, first_fin };
 
-extern void DUMP_NODE (PList *NODE, const char *REASON);
+extern void dump_node (PList *, const char *);
 
 /*
  * Major functionality is provided by these macros.
@@ -51,7 +51,7 @@ extern void DUMP_NODE (PList *NODE, const char *REASON);
 }
 
 #define END_NODE(NODE, PORT, REASON) { \
-  DUMP_NODE ((NODE), (REASON)); \
+  dump_node ((NODE), (REASON)); \
   sigprocmask (SIG_SETMASK, &blockset, &storeset); \
   if ((NODE)->next) { \
     (NODE)->next->prev = (NODE)->prev; \

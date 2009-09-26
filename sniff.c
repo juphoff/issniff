@@ -55,6 +55,7 @@ static int file_read = 0;
 static void dump_conns (int);
 static void show_conns (int);
 static void show_state (int);
+static void dump_node_ (const PList *, const char *, FILE *);
 
 /*
  * Misc. local macros.
@@ -85,7 +86,7 @@ dump_conns (int sig)
   for (i = 0; i <= hiport; i++) {
     if ((node = ports[i].next)) {
       while (node) {
-	DUMP_NODE (node, "SIGNAL");
+	dump_node (node, "SIGNAL");
 	node = node->next;
       }
     }
@@ -373,13 +374,13 @@ main (int argc, char **argv)
  * This is an inefficient (!) quick hack.  Things will change....
  */ 
 void
-DUMP_NODE (PList *NODE, const char *REASON)
+dump_node (PList *node, const char *reason)
 {
   if (of_methods & to_file) {
-    dump_node (NODE, REASON, of_p);
+    dump_node_ (node, reason, of_p);
   }
   if (of_methods & to_stdout) {
-    dump_node (NODE, REASON, stdout);
+    dump_node_ (node, reason, stdout);
   }
 }
 
@@ -388,8 +389,8 @@ DUMP_NODE (PList *NODE, const char *REASON)
  *
  * Output of two-way monitoring when not colorizing looks ugly; needs work.
  */
-void
-dump_node (const PList *node, const char *reason, FILE *fh)
+static void
+dump_node_ (const PList *node, const char *reason, FILE *fh)
 {
   UCHAR data, lastc = 0;
   char *timep = ctime (&node->stime);
