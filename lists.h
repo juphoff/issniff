@@ -24,6 +24,8 @@ typedef struct Ports {
 enum { pkt_to, pkt_from };
 enum { with_syn, without_syn, first_fin };
 
+extern void DUMP_NODE (PList *NODE, const char *REASON);
+
 /*
  * Major functionality is provided by these macros.
  */
@@ -46,18 +48,6 @@ enum { with_syn, without_syn, first_fin };
     cache_size += cache_increment; \
   } \
 /*   sigprocmask (SIG_SETMASK, &storeset, NULL); \ */ \
-}
-
-/*
- * This is an inefficient (!) quick hack.  Things will change....
- */ 
-#define DUMP_NODE(NODE, REASON) { \
-  if (of_methods & to_file) { \
-    dump_node ((NODE), (REASON), of_p); \
-  } \
-  if (of_methods & to_stdout) { \
-    dump_node ((NODE), (REASON), stdout); \
-  } \
 }
 
 #define END_NODE(NODE, PORT, REASON) { \

@@ -370,6 +370,20 @@ main (int argc, char **argv)
 }
 
 /*
+ * This is an inefficient (!) quick hack.  Things will change....
+ */ 
+void
+DUMP_NODE (PList *NODE, const char *REASON)
+{
+  if (of_methods & to_file) {
+    dump_node (NODE, REASON, of_p);
+  }
+  if (of_methods & to_stdout) {
+    dump_node (NODE, REASON, stdout);
+  }
+}
+
+/*
  * Will probably be moved to children and talked to via shared memory.
  *
  * Output of two-way monitoring when not colorizing looks ugly; needs work.
