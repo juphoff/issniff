@@ -17,5 +17,3 @@
 * Add output tty selection.
 
 * Other things, such as IPC and encrypted transfers.
-
-* Fix occasional OSF/1 "garbling."  (Seems to have gone away now....)
