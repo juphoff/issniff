@@ -24,7 +24,7 @@ int maxdata = IS_MAXDATA;
 int of_methods = to_stdout;
 int timeout = IS_TIMEOUT;
 int verbose = 0;
-int stats[] = { 0, 0, 0, 0 };
+int stats[] = { 0, 0, 0, 0, 0 }; /* Remove hard-coded size. */
 sigset_t blockset;
 FILE *of_p = NULL;
 Ports *ports;
@@ -114,7 +114,7 @@ show_conns (int sig)
       while (node) {
 	timep = ctime (&node->stime);
 	timep[strlen (timep) - 1] = 0; /* Zap newline */
-	MENTION(node->dport, node->daddr, node->sport, node->saddr, timep);
+	mention(node->dport, node->daddr, node->sport, node->saddr, timep);
 	node = node->next;
       }
     }
@@ -277,7 +277,7 @@ main (int argc, char **argv)
 	fputs ("'tcpdump -w' save-files not supported under this OS.\n",
 	       stderr);
 	return 1;
-#endif	
+#endif
       default:
 	fputs ("Usage: issniff [options] [+]port [[+]port ...]\n", stderr);
 	return 1;
@@ -371,8 +371,8 @@ main (int argc, char **argv)
 }
 
 /*
- * This is an inefficient (!) quick hack.  Things will change....
- */ 
+ * This can be made more efficient.
+ */
 void
 dump_node (PList *node, const char *reason)
 {
@@ -405,7 +405,7 @@ dump_node_ (const PList *node, const char *reason, FILE *fh)
   fprintf (fh, "Time: %s ", timep);
   fprintf (fh, "to %s", ctime (&now)); /* Two calls to printf() for a reason! */
   ia.s_addr = node->saddr;
-  fprintf (fh, "Path: %s:%d %s ", inet_ntoa (ia), node->sport, 
+  fprintf (fh, "Path: %s:%d %s ", inet_ntoa (ia), node->sport,
 	  ports[node->dport].twoway ? "<->" : "->");
   ia.s_addr = node->daddr;
   fprintf (fh, "%s:%d\n", inet_ntoa (ia), node->dport);
@@ -478,4 +478,20 @@ dump_node_ (const PList *node, const char *reason, FILE *fh)
   }
   fputs ("\n========================================================================\n", fh);
   fflush (fh);
+}
+
+/*
+ * Move elsewhere?
+ */
+void
+mention (PORT_T dport, ADDR_T daddr, PORT_T sport, ADDR_T saddr,
+	 const char *msg)
+{
+  struct in_addr ia;
+
+  ia.s_addr = saddr;
+  fprintf (stderr, "*  %s: %s:%d %s ", msg, inet_ntoa (ia), sport,
+	   ports[dport].twoway ? "<->" : "->");
+  ia.s_addr = daddr;
+  fprintf (stderr, "%s:%d\n", inet_ntoa (ia), dport);
 }

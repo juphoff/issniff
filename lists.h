@@ -14,7 +14,6 @@ typedef struct PList {
   int caught_syn;
 } PList;
 
-/* Simple rough hash. */
 typedef struct Ports {
   PORT_T port;
   int twoway;
@@ -116,15 +115,8 @@ enum { with_syn, without_syn, first_fin };
     sigprocmask (SIG_SETMASK, &storeset, NULL); \
     ADD_DATA (new, (BUF), (IPH), (TCPH), (SHIFT), (LENGTH)); \
   } else { \
-    MENTION (DPORT, DADDR, SPORT, SADDR, "No memory; NOT MONITORING"); \
+    mention (DPORT, DADDR, SPORT, SADDR, "No memory; NOT MONITORING"); \
   } \
 }
 
-#define MENTION(DPORT, DADDR, SPORT, SADDR, MSG) { \
-  struct in_addr ia; \
-  ia.s_addr = (SADDR); \
-  fprintf (stderr, "*  %s: %s:%d %s ", (MSG), inet_ntoa (ia), (SPORT), \
-	   ports[(DPORT)].twoway ? "<->" : "->"); \
-  ia.s_addr = (DADDR); \
-  fprintf (stderr, "%s:%d\n", inet_ntoa (ia), (DPORT)); \
-}
+extern void mention(PORT_T, ADDR_T, PORT_T, ADDR_T, const char *);

@@ -69,7 +69,7 @@ rt_filter (UCHAR *buf, int len)
 	/* I'll probably need to add all_conns detection both ways. */
 	if (SYN (tcph)) {
 	  if (verbose) {
-	    MENTION (dport, daddr, sport, saddr, "New connection");
+	    mention (dport, daddr, sport, saddr, "New connection");
 	  }
 	  ADD_NODE (dport, daddr, sport, saddr, with_syn,
 		    &buf[IPHLEN (iph) + DOFF (tcph)], iph, tcph, data_to, len);
@@ -80,7 +80,7 @@ rt_filter (UCHAR *buf, int len)
 	   * track.  Need to save state here somehow...blah.
 	   */
 	  if (verbose) {
-	    MENTION (dport, daddr, sport, saddr, "Detected 'late'");
+	    mention (dport, daddr, sport, saddr, "Detected 'late'");
 	  }
 	  ADD_NODE (dport, daddr, sport, saddr, without_syn,
 		    &buf[IPHLEN (iph) + DOFF (tcph)], iph, tcph, data_to, len);
