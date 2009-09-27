@@ -12,7 +12,7 @@ include .version
 
 # OS-specific defines.
 #DEFINES_linux	= -DSUPPORT_TCPDUMP -DOSHEADER=\"linux.h\" -DIFOSHEADER=\"if_linux.h\"
-DEFINES_linux	= -DSUPPORT_TCPDUMP
+DEFINES_linux-gnu	= -DSUPPORT_TCPDUMP
 
 # General definitions.
 DEFINES	= $(DEFINES_@this_os@) -DIS_VERSION=\"$(IS_VERSION)\" -DOSHEADER=\"@this_os@.h\" -DIFOSHEADER=\"if_@this_os@.h\"
@@ -22,14 +22,14 @@ WFLAGS	= -Wall -Wcast-align -Wcast-qual -Winline -Wnested-externs \
           -Wpointer-arith -Wshadow -Wstrict-prototypes -Wwrite-strings
 
 # OS-specific C compiler flags.
-CFLAGS_linux	= -fomit-frame-pointer -fno-strength-reduce
+CFLAGS_linux-gnu	= -fomit-frame-pointer -fno-strength-reduce
 
 # Autoconf-determined compiler definitions.
 CC	= @CC@
 CFLAGS	= @CFLAGS@ $(CFLAGS_@this_os@) $(DEBUGS) $(DEFINES) $(DEBUG_WFLAGS) $(WFLAGS)
 
 # OS-specific feature support.
-SRCS_linux	= pcap-tcpdump.c
+SRCS_linux-gnu	= pcap-tcpdump.c
 
 PROG	= issniff
 MANEXT	= 8
