@@ -33,7 +33,7 @@ SRCS_linux-gnu	= pcap-tcpdump.c
 
 PROG	= issniff
 MANEXT	= 8
-SRCS	= @this_os@.c filter.c if.c shm.c sniff.c $(SRCS_@this_os@)
+SRCS	= @this_os@.c filter.c if.c lists.c shm.c sniff.c $(SRCS_@this_os@)
 MANSRC	= $(PROG).man
 OBJS	= $(SRCS:.c=.o)
 MANUAL	= $(MANSRC:.man=.$(MANEXT))
