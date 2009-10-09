@@ -1,6 +1,6 @@
 .\" -*- nroff -*-
 .\" $Id$
-.TH issniff 8 "13 March 2009" "Version @@IS_VERSION@@" "NRAO, Transmeta, rPath, Novell"
+.TH issniff 8 "9 October 2009" "Version @@IS_VERSION@@" "NRAO, Transmeta, rPath, Novell"
 .SH NAME
 issniff \- Internet Session SNIFFer
 .SH SYNOPSIS
@@ -174,15 +174,18 @@ Tcpdump "interface" still buggy and under development.
 .sp
 OSF/1 (Digital UNIX) seems to be garbling output now and then.
 Investigating.
-.SH NOTE
+.SH NOTES
 Some features and/or options have not yet been implemented.
 \fBissniff\fR has been tested under:
 .sp
 Linux: 1.2.13, 1.3.45, 1.99.x., 2.0.x., 2.1.x, 2.2.x, 2.6.x
 .br
 OSF/1: T3.2, 4.0B.
+.sp
+Linux is the only OS under active development; all others have been
+deprecated.
 .SH AUTHOR
 This code and documentation is Copyright (C) 1996-1999, 2004-2005, 2008-2009
 Jeffrey A. Uphoff <juphoff@kjsl.com>.
-.br
+.sp
 All rights reserved.
