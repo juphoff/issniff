@@ -160,7 +160,7 @@ find_node (PORT_T dport, ADDR_T daddr, PORT_T sport, ADDR_T saddr)
 	(node->daddr == daddr)) {
       return node;
     }
-    /* Timeout stanza. */
+    /* Timeout handling. */
     if (timeout && node->timeout && (now - node->timeout > timeout)) {
       PList *nnode = node->next;
       ++stats[s_timeout];

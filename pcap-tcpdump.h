@@ -1,6 +1,6 @@
 /* $Id$ */
 
-/* 
+/*
  * I sort of borrowed some header code from those nice network-hackin'
  * fellows out west....
  */
