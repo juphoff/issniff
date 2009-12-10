@@ -339,7 +339,6 @@ main (int argc, char **argv)
     exit (errno);
   }
   cache->next = NULL;
-  EXPAND_CACHE;			/* Get ready for first packet. */
   sigact.sa_handler = dump_conns;
 
   if ((sigaction (SIGINT, &sigact, NULL) < 0) ||
