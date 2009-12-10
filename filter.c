@@ -6,7 +6,7 @@
 /*
  * Local variables.
  */
-static sigset_t storeset;	/* Used in lists.h macros. */
+static sigset_t storeset;	/* FIXME: Used in lists.h macros. */
 
 /*
  * Local function prototypes.
@@ -71,7 +71,7 @@ rt_filter (UCHAR *buf, int len)
 	  if (verbose) {
 	    mention (dport, daddr, sport, saddr, "New connection");
 	  }
-	  ADD_NODE (dport, daddr, sport, saddr, with_syn,
+	  add_node (dport, daddr, sport, saddr, with_syn,
 		    &buf[IPHLEN (iph) + DOFF (tcph)], iph, tcph, data_to, len);
 	} else if (all_conns && !FINRST (tcph)) {
 	  /*
@@ -82,7 +82,7 @@ rt_filter (UCHAR *buf, int len)
 	  if (verbose) {
 	    mention (dport, daddr, sport, saddr, "Detected 'late'");
 	  }
-	  ADD_NODE (dport, daddr, sport, saddr, without_syn,
+	  add_node (dport, daddr, sport, saddr, without_syn,
 		    &buf[IPHLEN (iph) + DOFF (tcph)], iph, tcph, data_to, len);
 	  ++stats[s_late];
 	}

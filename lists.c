@@ -6,7 +6,7 @@
 /*
  * Local variables.
  */
-static sigset_t storeset;	/* Used in lists.h macros. */
+static sigset_t storeset;	/* FIXME: Used in lists.h macros. */
 
 static void
 expand_cache (void)
@@ -31,7 +31,7 @@ expand_cache (void)
   }
 }
 
-void ADD_NODE (PORT_T DPORT, ADDR_T DADDR, PORT_T SPORT, ADDR_T SADDR, 
+void add_node (PORT_T DPORT, ADDR_T DADDR, PORT_T SPORT, ADDR_T SADDR, 
 	       int HAS_SYN, UCHAR *BUF, IPhdr *IPH, TCPhdr *TCPH, 
 	       int SHIFT, int LENGTH) {
   PList *new = NULL;
