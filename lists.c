@@ -45,27 +45,27 @@ void add_node (PORT_T DPORT, ADDR_T DADDR, PORT_T SPORT, ADDR_T SADDR,
     --cache_size;
     ++curr_conn;
     new->prev = NULL;
-    new->daddr = (DADDR);
-    new->saddr = (SADDR);
-    new->dport = (DPORT);
-    new->sport = (SPORT);
+    new->daddr = DADDR;
+    new->saddr = SADDR;
+    new->dport = DPORT;
+    new->sport = SPORT;
     new->pkts[pkt_to] = 1;
     new->pkts[pkt_from] = 0;
     new->dlen = 0;
-    new->caught_syn = (HAS_SYN);
+    new->caught_syn = HAS_SYN;
     memset (new->data, 0, sizeof (UDATA) * maxdata);
     time (&new->stime);		/* Need hack for file reads with timestamps */
     new->timeout = new->stime;
-    if (!ports[(DPORT)].next) {
+    if (!ports[DPORT].next) {
       new->next = NULL;
-      ports[(DPORT)].next = new;
+      ports[DPORT].next = new;
     } else {
-      ports[(DPORT)].next->prev = new;
-      new->next = ports[(DPORT)].next;
-      ports[(DPORT)].next = new;
+      ports[DPORT].next->prev = new;
+      new->next = ports[DPORT].next;
+      ports[DPORT].next = new;
     }
     sigprocmask (SIG_SETMASK, &storeset, NULL);
-    ADD_DATA (new, (BUF), (IPH), (TCPH), (SHIFT), (LENGTH));
+    ADD_DATA (new, BUF, IPH, TCPH, SHIFT, LENGTH);
   } else {
     mention (DPORT, DADDR, SPORT, SADDR, "No memory; NOT MONITORING");
   }
