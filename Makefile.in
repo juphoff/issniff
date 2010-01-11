@@ -43,7 +43,7 @@ MANUAL	= $(MANSRC:.man=.$(MANEXT))
 
 all:	do-all
 
-# Bootstrap the dependencies.
+# Bootstrap the dependencies (reminiscent of old Linux kernel Makefiles).
 ifeq (.depend, $(wildcard .depend))
 include .depend
 do-all:	$(PROG) $(MANUAL)
