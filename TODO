@@ -1,12 +1,10 @@
-* Problems with Linux & glibc--SEGV's.  Change to more "conventional"
-  malloc'ing?
+* Change to more-conventional malloc'ing?  Mischief managed.
 
 * BPF for Linux now that 2.1.x has it.
 
-* SIGUSR2 causes endless output looping.  (Not always...but what's up
-  with that?!?)
+* SIGUSR2 sometimes causes endless output looping.
 
-* Finish implementing autoconf.
+* Finish autoconf.
 
 * Add native command-line address selection.
 

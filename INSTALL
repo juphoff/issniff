@@ -5,19 +5,17 @@ gmake
 
 [Standard GNU autoconf options may be passed to configure.]
 
-GNU make is *required*: the Makefile (generated from Makefile.in by
-configure) is currently very GNU-specific.  Also, all development has
-been done using gcc (the GNU C compiler): this is the only supported
-compiler; the $CFLAGS et al. in the Makefile are very GCC-specific, and
-will choke most other compilers badly.  Portability to other compilers
-is low on my priority list and thus will likely not be seen for some
-time.
+GNU make is required: the Makefile (generated from Makefile.in by
+configure) is currently GNU-specific.  Also, all development has been
+done using gcc (the GNU C compiler): this is the only supported
+compiler, as the $CFLAGS &c. in the Makefile are very GCC-specific and
+will choke most other compilers badly.
 
 Expect (i.e. ignore) compiler warnings about alignment, etc., from
 OSF/1.  Linux may also complain about a zero-sized arrays in various
 #include files...don't worry about that either.
 
-Usage as a back-end for 'tcpdump' is only supported under--and only
-compiles under--Linux at this time.
+Usage as a back-end for 'tcpdump' is currently only supported under--and
+only compiles under--Linux.
 
 Read the manpage for usage.
