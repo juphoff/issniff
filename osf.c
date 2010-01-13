@@ -90,7 +90,7 @@ if_open_net (int nolocal)
   fprintf (stderr, "Version %s listening on %s.\n\n", IS_VERSION, ifr.ifr_name);
 
   if (nolocal) {
-    fprintf (stderr, "Warning: locally-originated packets not monitored!\n\n");
+    fprintf (stderr, "Warning: locally originated packets not monitored!\n\n");
   }
 }
 

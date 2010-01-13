@@ -6,10 +6,11 @@ gmake
 [Standard GNU autoconf options may be passed to configure.]
 
 GNU make is required: the Makefile (generated from Makefile.in by
-configure) is currently GNU-specific.  Also, all development has been
-done using gcc (the GNU C compiler): this is the only supported
-compiler, as the $CFLAGS &c. in the Makefile are very GCC-specific and
-will choke most other compilers badly.
+configure) is GNU-specific.  Also, all development has been done using
+gcc (the GNU C compiler): this is the only supported compiler, as the
+$CFLAGS &c. in the Makefile are very GCC-specific and will choke most
+other compilers badly.  (This used to be an issue when operating systems
+other than Linux were supported, e.g. SunOS.)
 
 Expect (i.e. ignore) compiler warnings about alignment, etc., from
 OSF/1.  Linux may also complain about a zero-sized arrays in various

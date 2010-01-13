@@ -1,7 +1,8 @@
 (This file is more of a stream-of-consciousness TODO expansion than a
 real README.  Check the man-page for usage information.)
 
-Things are *messy* right now: I'm in the middle of a code refactoring.
+Things are *messy* right now: I'm in the middle of a code refactoring
+and adding BPF support for Linux.
 
 
 Basic:

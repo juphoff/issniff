@@ -55,7 +55,7 @@ interface supported on non-Linux systems at this time.)
 .B -n
 No local packets/connections.  Only packets/connections originating from
 \fBother\fR systems will be passed through to the packet-filtering
-layer, i.e. locally-originating packets/connections will be "lost."
+layer, i.e. locally originated packets/connections will be "lost."
 (Default is to pass/process all packets/connections on OS's that support
 it, currently Linux and OSF/1.)
 .sp
@@ -150,15 +150,15 @@ Causes \fBissniff\fR to output its current state information to
 \fIstderr\fR.
 .TP
 .B USR2
-Causes \fBissniff\fR to output a summary list of the currently-active
+Causes \fBissniff\fR to output a summary list of the currently active
 network connections it is collecting data for to \fIstderr\fR.
 .TP
 .B HUP
-Display full output for all currently-active connections, then resume
+Display full output for all currently active connections, then resume
 monitoring.
 .TP
 .B INT
-Exit with full output for all currently-active connections.  Turns off
+Exit with full output for all currently active connections.  Turns off
 promiscuous mode.
 .TP
 .B QUIT
