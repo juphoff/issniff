@@ -2,7 +2,7 @@
 
 * BPF for Linux now that 2.1.x has it.
 
-* SIGUSR2 sometimes causes endless output looping.
+* SIGUSR2 & SIGHUP sometimes cause endless output looping.
 
 * Finish autoconf.
 
