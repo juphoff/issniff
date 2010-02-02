@@ -26,6 +26,7 @@ enum { with_syn, without_syn, first_fin };
 /*
  * Major functionality is provided by these macros.
  */
+#if 0
 #define END_NODE(NODE, PORT, REASON) { \
   dump_node ((NODE), (REASON)); \
   sigprocmask (SIG_SETMASK, &blockset, &storeset); \
@@ -59,6 +60,9 @@ enum { with_syn, without_syn, first_fin };
     time (&(NODE)->timeout);	/* Need to handle files with timestamps */ \
   } \
 }
+#endif
 
 extern void add_node (PORT_T, ADDR_T, PORT_T, ADDR_T, int, UCHAR *, IPhdr *, TCPhdr *, int, int);
 extern void mention (PORT_T, ADDR_T, PORT_T, ADDR_T, const char *);
+extern void add_data (PList *, UCHAR *, IPhdr *, TCPhdr *, int, int);
+extern void END_NODE (PList *, PORT_T, const char *);

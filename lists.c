@@ -65,8 +65,45 @@ void add_node (PORT_T DPORT, ADDR_T DADDR, PORT_T SPORT, ADDR_T SADDR,
       ports[DPORT].next = new;
     }
     sigprocmask (SIG_SETMASK, &storeset, NULL);
-    ADD_DATA (new, BUF, IPH, TCPH, SHIFT, LENGTH);
+    add_data (new, BUF, IPH, TCPH, SHIFT, LENGTH);
   } else {
     mention (DPORT, DADDR, SPORT, SADDR, "No memory; NOT MONITORING");
   }
+}
+
+void add_data(PList *node, UCHAR *buf, IPhdr *iph, TCPhdr *tcph, int toshift,
+	      int thelength) {
+  int i = 0;
+  int blen = ((thelength < ntohs (IPLEN(iph))) ? thelength : ntohs (IPLEN(iph))) - IPHLEN(iph) - DOFF(tcph);
+  int todo = (node->dlen + blen > maxdata) ? maxdata - node->dlen : blen;
+
+  while (i < todo) {
+    node->data[node->dlen + i] = (UDATA)(buf[i++]) << toshift;
+  }
+  node->dlen += todo;
+
+  if (node->dlen == maxdata) {
+    ++stats[s_maxdata];
+    END_NODE (node, node->dport, "MAXDATA");
+  } else {
+    time (&node->timeout);	/* Need to handle files with timestamps */
+  }
+}
+
+void END_NODE(PList *NODE, PORT_T PORT, const char *REASON) { \
+  dump_node (NODE, REASON);
+  sigprocmask (SIG_SETMASK, &blockset, &storeset);
+  if (NODE->next) {
+    NODE->next->prev = NODE->prev;
+  }
+  if (NODE->prev) {
+    NODE->prev->next = NODE->next;
+  } else {
+    ports[PORT].next = NODE->next;
+  }
+  NODE->next = cache->next;
+  cache->next = NODE;
+  ++cache_size;
+  --curr_conn;
+  sigprocmask (SIG_SETMASK, &storeset, NULL);
 }

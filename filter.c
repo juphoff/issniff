@@ -49,7 +49,7 @@ rt_filter (UCHAR *buf, int len)
 
 	if (node) {
 	  ++node->pkts[pkt_from];
-	  ADD_DATA (node, &buf[IPHLEN (iph) + DOFF (tcph)], iph, tcph,
+	  add_data (node, &buf[IPHLEN (iph) + DOFF (tcph)], iph, tcph,
 		    data_from, len);
 
 	  if (FIN (tcph)) {
@@ -88,7 +88,7 @@ rt_filter (UCHAR *buf, int len)
 	}
       } else {
 	++node->pkts[pkt_to];
-	ADD_DATA (node, &buf[IPHLEN (iph) + DOFF (tcph)], iph, tcph, data_to,
+	add_data (node, &buf[IPHLEN (iph) + DOFF (tcph)], iph, tcph, data_to,
 		  len);
 
 	if (FIN (tcph)) {
