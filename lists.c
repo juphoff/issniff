@@ -6,7 +6,7 @@
 /*
  * Local variables.
  */
-static sigset_t storeset;	/* FIXME: Used in lists.h macros. */
+static sigset_t storeset;
 
 static void
 expand_cache (void)
@@ -78,7 +78,8 @@ void add_data(PList *node, UCHAR *buf, IPhdr *iph, TCPhdr *tcph, int toshift,
   int todo = (node->dlen + blen > maxdata) ? maxdata - node->dlen : blen;
 
   while (i < todo) {
-    node->data[node->dlen + i] = (UDATA)(buf[i++]) << toshift;
+    node->data[node->dlen + i] = (UDATA)(buf[i]) << toshift;
+    i++;
   }
   node->dlen += todo;
 

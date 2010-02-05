@@ -4,11 +4,6 @@
 #include "filter.h"
 
 /*
- * Local variables.
- */
-static sigset_t storeset;	/* FIXME: Used in lists.h macros. */
-
-/*
  * Local function prototypes.
  */
 static PList *find_node (PORT_T, ADDR_T, PORT_T, ADDR_T);
