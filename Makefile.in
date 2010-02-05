@@ -65,6 +65,9 @@ $(MANUAL):	$(MANSRC) .version
 clean:
 	$(RM) $(PROG) $(MANUAL) $(OBJS)
 
+dist:	distclean
+	tar -cjvf $(PROG)-$(IS_VERSION).tar.bz2 -C .. $(PROG) --exclude $(PROG)/.git --exclude $(PROG)/$(PROG)-$(IS_VERSION).tar.bz2 --exclude $(PROG)/.*ignore
+
 distclean:	clean
 	$(RM) .depend Makefile config.cache config.h config.log config.status core* *~ \#*
 	$(RM) -r autom4te.cache
