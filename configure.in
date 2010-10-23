@@ -20,6 +20,7 @@ if test $ac_cv_c_compiler_gnu != yes; then
 fi
 
 AC_PROG_CPP
+AC_PROG_CXX
 
 ## Check for libraries.
 

@@ -1,7 +1,6 @@
 /* $Id$ */
 
-int linkhdr_len;
-struct ifreq ifr;
+extern int linkhdr_len;
 
 extern char *if_detect (int);
 
@@ -25,3 +24,5 @@ extern char *if_detect (int);
 
 extern int ioctl (int, int, ...);
 #endif /* __osf__ */
+
+extern struct ifreq ifr;

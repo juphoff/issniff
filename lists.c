@@ -34,38 +34,38 @@ expand_cache (void)
 void add_node (PORT_T DPORT, ADDR_T DADDR, PORT_T SPORT, ADDR_T SADDR, 
 	       int HAS_SYN, UCHAR *BUF, IPhdr *IPH, TCPhdr *TCPH, 
 	       int SHIFT, int LENGTH) {
-  PList *new = NULL;
+  PList *newp = NULL;
   if (!cache_size) {
     expand_cache ();
   }
   if (cache_size) {
     sigprocmask (SIG_SETMASK, &blockset, &storeset);
-    new = cache->next;
+    newp = cache->next;
     cache->next = cache->next->next;
     --cache_size;
     ++curr_conn;
-    new->prev = NULL;
-    new->daddr = DADDR;
-    new->saddr = SADDR;
-    new->dport = DPORT;
-    new->sport = SPORT;
-    new->pkts[pkt_to] = 1;
-    new->pkts[pkt_from] = 0;
-    new->dlen = 0;
-    new->caught_syn = HAS_SYN;
-    memset (new->data, 0, sizeof (UDATA) * maxdata);
-    time (&new->stime);		/* Need hack for file reads with timestamps */
-    new->timeout = new->stime;
+    newp->prev = NULL;
+    newp->daddr = DADDR;
+    newp->saddr = SADDR;
+    newp->dport = DPORT;
+    newp->sport = SPORT;
+    newp->pkts[pkt_to] = 1;
+    newp->pkts[pkt_from] = 0;
+    newp->dlen = 0;
+    newp->caught_syn = HAS_SYN;
+    memset (newp->data, 0, sizeof (UDATA) * maxdata);
+    time (&newp->stime);	/* Need hack for file reads with timestamps */
+    newp->timeout = newp->stime;
     if (!ports[DPORT].next) {
-      new->next = NULL;
-      ports[DPORT].next = new;
+      newp->next = NULL;
+      ports[DPORT].next = newp;
     } else {
-      ports[DPORT].next->prev = new;
-      new->next = ports[DPORT].next;
-      ports[DPORT].next = new;
+      ports[DPORT].next->prev = newp;
+      newp->next = ports[DPORT].next;
+      ports[DPORT].next = newp;
     }
     sigprocmask (SIG_SETMASK, &storeset, NULL);
-    add_data (new, BUF, IPH, TCPH, SHIFT, LENGTH);
+    add_data (newp, BUF, IPH, TCPH, SHIFT, LENGTH);
   } else {
     mention (DPORT, DADDR, SPORT, SADDR, "No memory; NOT MONITORING");
   }

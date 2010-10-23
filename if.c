@@ -13,6 +13,12 @@
 #define IF_DETECT_BUFSIZ 1024	/* Big enough for ~25 interfaces + slop. */
 
 /*
+ * Global variables.
+ */
+int linkhdr_len;
+struct ifreq ifr;
+
+/*
  * Function protoypes.
  */
 char *if_getname (void);
