@@ -8,7 +8,10 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include "if.h"
-#include IFOSHEADER
+
+#if OSHEADER == linux-gnu
+# include "if_linux-gnu.h"
+#endif
 
 #define IF_DETECT_BUFSIZ 1024	/* Big enough for ~25 interfaces + slop. */
 
