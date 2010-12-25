@@ -11,10 +11,13 @@
 #include <string.h>
 #include <unistd.h>
 #include <net/if.h>
-#include OSHEADER
 #include "sniff.h"
 #include "if.h"
 #include "pcap-tcpdump.h"
+
+#if OSHEADER == linux-gnu
+# include "linux-gnu.h"
+#endif
 
 /*
  * Local variables.
