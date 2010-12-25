@@ -11,11 +11,10 @@ include .version
 #DEBUG_WFLAGS = -pedantic -Wmissing-prototypes
 
 # OS-specific defines.
-#DEFINES_linux	= -DSUPPORT_TCPDUMP -DOSHEADER=\"linux.h\" -DIFOSHEADER=\"if_linux.h\"
 DEFINES_linux-gnu	= -DSUPPORT_TCPDUMP
 
 # General definitions.
-DEFINES	= $(DEFINES_@this_os@) -DIS_VERSION=\"$(IS_VERSION)\" -DOSHEADER=@this_os@
+DEFINES	= $(DEFINES_@this_os@) -DIS_VERSION=\"$(IS_VERSION)\"
 
 # The Ted Ts'o express.  Noisy under some OS's.  Very gcc-specific.
 WFLAGS	= -Wall -Wcast-align -Wcast-qual -Winline \

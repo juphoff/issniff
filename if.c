@@ -7,11 +7,10 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
-#include "if.h"
-
-#if OSHEADER == linux-gnu
+#ifdef __linux__
 # include "if_linux-gnu.h"
 #endif
+#include "if.h"
 
 #define IF_DETECT_BUFSIZ 1024	/* Big enough for ~25 interfaces + slop. */
 

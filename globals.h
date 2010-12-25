@@ -6,11 +6,10 @@
 #include <string.h>
 #include <time.h>
 #include <arpa/inet.h>
-#include "lists.h"
-
-#if OSHEADER == linux-gnu
+#ifdef __linux__
 # include "linux-gnu.h"
 #endif
+#include "lists.h"
 
 /*
  * Global variables.
