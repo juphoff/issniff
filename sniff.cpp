@@ -9,12 +9,13 @@
 #include "shm.h"
 #include "filter.h"
 #include "misc.h"
+#include <list>
 
 /*
  * Global variables.
  */
 char if_name[MAXNAMLEN];	/* Remove from global list. */
-PORT_T hiport = 0;
+//PORT_T hiport = 0;
 int all_conns = 0;
 int cache_increment = CACHE_INC;
 int cache_max = 0;
@@ -49,6 +50,8 @@ static int squash_output = 0;
 static int file_read = 0;
 #endif
 
+list<Port> portlist;
+
 /*
  * Local function prototypes.
  */
@@ -65,8 +68,6 @@ static void dump_node_ (const PList *, const char *, FILE *);
 #define CHKOPT(FALLBACK) (atoi (optarg) ? atoi (optarg) : (FALLBACK))
 
 /*
- * Jump!
- *
  * (Default settings.)
  */
 static void (*filter) (UCHAR *, int) = rt_filter;
@@ -75,14 +76,44 @@ static void (*if_open) (int) = if_open_net;
 static void (*if_read) (void (*) (UCHAR *, int)) = if_read_ip_net;
 
 /*
+ * Initial C++ class functionality.
+ */
+Port::Port (PORT_T port, int twoway)
+{
+  m_port = port;
+  m_twoway = twoway;
+}
+
+PORT_T Port::getPort (void)
+{
+  return m_port;
+}
+
+int Port::getTwoway (void)
+{
+  return m_twoway;
+}
+
+/*
  * Signal handler.
  */
 static void
 dump_conns (int sig)
 {
-  PORT_T i;
+  //  PORT_T i;
   PList *node;
 
+  list<Port>::iterator it;
+
+  for (it = portlist.begin(); it != portlist.end(); it++) {
+    if ((node = it->next)) {
+      while (node) {
+	dump_node (node, "SIGNAL");
+	node = node->next;
+      }
+    }
+  }
+  /*
   for (i = 0; i <= hiport; i++) {
     if ((node = ports[i].next)) {
       while (node) {
@@ -91,6 +122,7 @@ dump_conns (int sig)
       }
     }
   }
+  */
   if (sig == SIGHUP) {
     return;
   }
@@ -104,21 +136,34 @@ static void
 show_conns (int sig)
 {
   char *timep;
-  PORT_T i;
+  //  PORT_T i;
   PList *node;
+  list<Port>::iterator it;
 
   fputs ("\n** Active connections:\n", stderr);
-
+ 
+  for (it = portlist.begin(); it != portlist.end(); it++) {
+    if ((node = it->next)) {
+      while (node) {
+	timep = ctime (&node->stime);
+	timep[strlen (timep) - 1] = 0;
+	mention (node->dport, node->daddr, node->sport, node->saddr, timep);
+	node = node->next;
+      }
+    }
+  }
+  /*
   for (i = 0; i <= hiport; i++) {
     if ((node = ports[i].next)) {
       while (node) {
 	timep = ctime (&node->stime);
-	timep[strlen (timep) - 1] = 0; /* Zap newline */
+	timep[strlen (timep) - 1] = 0;
 	mention(node->dport, node->daddr, node->sport, node->saddr, timep);
 	node = node->next;
       }
     }
   }
+  */
   fputc ('\n', stderr);
 }
 
@@ -128,7 +173,7 @@ show_conns (int sig)
 static void
 show_state (int sig)
 {
-  PORT_T i;
+  //  PORT_T i;
 
   fprintf (stderr, "\n\
 ** Current state:\n\
@@ -173,6 +218,16 @@ show_state (int sig)
 
   fputs ("*  Monitoring ports:", stderr);
 
+  list<Port>::iterator it;
+
+  for (it = portlist.begin(); it != portlist.end(); it++) {
+    if (it->getTwoway()) {
+      fprintf (stderr, " +%d", it->getPort());
+    } else {
+      fprintf (stderr, " %d", it->getPort());
+    }
+  }
+  /*
   for (i = 0; i <= hiport; i++) {
     if (ports[i].port) {
       if (ports[i].twoway) {
@@ -182,6 +237,7 @@ show_state (int sig)
       }
     }
   }
+  */
 #if defined(DEBUG) && defined(USING_BPF)
   fprintf (stderr,
 	   "\n\n*  Number of non-TCP packets that have snuck through: %d",
@@ -283,6 +339,7 @@ main (int argc, char **argv)
 	return 1;
       }
     }
+    /*
     for (i = optind; i < argc; i++) {
       if (!strncmp (argv[i], "+addr", 5)) {
 	break;
@@ -292,12 +349,15 @@ main (int argc, char **argv)
 	hiport = thisport > hiport ? thisport : hiport;
       }
     }
+    */
     /* Yes, wasting some (lots at times) memory for the sake of speed. */
+    /*
     if (!(ports = (Ports *)malloc (sizeof (Ports) * (hiport + 1)))) {
       perror ("malloc");
       exit (errno);
     }
     memset (ports, 0, sizeof (Ports) * (hiport + 1));
+    */
     /* Second time through arg. lists.  Clean this up. */
     for (i = optind; i < argc; i++) {
       if (!strncmp (argv[i], "+addr", 5)) {
@@ -306,8 +366,11 @@ main (int argc, char **argv)
       } else {
 	PORT_T thisport =
 	  (PORT_T)(argv[i][0] == '+' ? atoi (&argv[i][1]) : atoi (argv[i]));
-	ports[thisport].port = 1;
-	ports[thisport].twoway = argv[i][0] == '+' ? 1 : 0;
+	int twoway = argv[i][0] == '+' ? 1 : 0;
+	Port port = Port (thisport, twoway);
+	portlist.push_back (port);
+	//	ports[thisport].port = 1;
+	//	ports[thisport].twoway = argv[i][0] == '+' ? 1 : 0;
 /* 	ports[thisport].next = (PList *)NULL; */ /* JAU: From sol port...why? */
       }
     }

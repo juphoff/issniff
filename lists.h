@@ -1,5 +1,7 @@
 /* $Id$ */
 
+using namespace std;
+
 /*
  * Primary data structures.
  */
@@ -13,6 +15,20 @@ typedef struct PList {
   time_t stime, timeout;
   int caught_syn;
 } PList;
+
+class Port
+{
+ public:
+  Port (PORT_T port, int twoway);
+  ~Port () {};
+
+  PORT_T getPort (void);
+  int getTwoway (void);
+  PList *next;
+ private:
+  PORT_T m_port;
+  int m_twoway;
+};
 
 typedef struct Ports {
   PORT_T port;
