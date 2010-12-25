@@ -5,9 +5,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include OSHEADER
 #include <arpa/inet.h>
 #include "lists.h"
+
+#if OSHEADER == linux-gnu
+# include "linux-gnu.h"
+#endif
 
 /*
  * Global variables.
