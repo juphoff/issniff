@@ -15,7 +15,7 @@ include .version
 DEFINES_linux-gnu	= -DSUPPORT_TCPDUMP
 
 # General definitions.
-DEFINES	= $(DEFINES_@this_os@) -DIS_VERSION=\"$(IS_VERSION)\" -DOSHEADER=\"@this_os@.h\" -DIFOSHEADER=\"if_@this_os@.h\"
+DEFINES	= $(DEFINES_@this_os@) -DIS_VERSION=\"$(IS_VERSION)\" -DOSHEADER=@this_os@
 
 # The Ted Ts'o express.  Noisy under some OS's.  Very gcc-specific.
 WFLAGS	= -Wall -Wcast-align -Wcast-qual -Winline \
@@ -33,7 +33,7 @@ SRCS_linux-gnu	= pcap-tcpdump.c
 
 PROG	= issniff
 MANEXT	= 8
-SRCS	= @this_os@.c filter.c if.c lists.c shm.c sniff.c $(SRCS_@this_os@)
+SRCS	= @this_os@.c filter.c if.c lists.c shm.c sniff.cpp $(SRCS_@this_os@)
 MANSRC	= $(PROG).man
 OBJS	= $(SRCS:.c=.o)
 MANUAL	= $(MANSRC:.man=.$(MANEXT))
@@ -63,7 +63,7 @@ $(MANUAL):	$(MANSRC) .version
 	sed 's/@@IS_VERSION@@/$(IS_VERSION)/g' $< > $@
 
 clean:
-	$(RM) $(PROG) $(MANUAL) $(OBJS)
+	$(RM) $(PROG) $(MANUAL) *.o
 
 dist:	distclean
 	tar -cjvf $(PROG)-$(IS_VERSION).tar.bz2 -C .. $(PROG) --exclude $(PROG)/.git --exclude $(PROG)/$(PROG)-$(IS_VERSION).tar.bz2 --exclude $(PROG)/.*ignore
