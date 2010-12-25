@@ -14,7 +14,7 @@ include .version
 DEFINES_linux-gnu	= -DSUPPORT_TCPDUMP
 
 # General definitions.
-DEFINES	= $(DEFINES_@this_os@) -DIS_VERSION=\"$(IS_VERSION)\"
+DEFINES	= $(DEFINES_@this_os@) -DIS_VERSION="$(IS_VERSION)"
 
 # The Ted Ts'o express.  Noisy under some OS's.  Very gcc-specific.
 WFLAGS	= -Wall -Wcast-align -Wcast-qual -Winline \
@@ -26,15 +26,17 @@ CFLAGS_linux-gnu	= -fomit-frame-pointer -fno-strength-reduce
 # Autoconf-determined compiler definitions.
 CC	= @CXX@
 CFLAGS	= @CFLAGS@ $(CFLAGS_@this_os@) $(DEBUGS) $(DEFINES) $(DEBUG_WFLAGS) $(WFLAGS)
+CXXFLAGS = $(CFLAGS)
 
 # OS-specific feature support.
 SRCS_linux-gnu	= pcap-tcpdump.c
 
 PROG	= issniff
 MANEXT	= 8
-SRCS	= @this_os@.c filter.c if.c lists.c shm.c sniff.cpp $(SRCS_@this_os@)
+CSRCS	= @this_os@.c filter.c if.c lists.c shm.c $(SRCS_@this_os@)
+CXXSRCS = sniff.cpp
 MANSRC	= $(PROG).man
-OBJS	= $(SRCS:.c=.o)
+OBJS	= $(CSRCS:.c=.o) $(CXXSRCS:.cpp=.o)
 MANUAL	= $(MANSRC:.man=.$(MANEXT))
 
 # Target rules start here: no user-servicable parts beyond this point.
