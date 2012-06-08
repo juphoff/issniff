@@ -37,8 +37,11 @@ rt_filter (UCHAR *buf, int len)
     TCPhdr *tcph = (TCPhdr *)&buf[IPHLEN (iph)];
     PORT_T dport = ntohs (DPORT (tcph)), sport = ntohs (SPORT (tcph));
 
-    if (dport > hiport || !ports[dport].port) {
-      if (sport <= hiport && ports[sport].twoway) {
+    /*
+     * FIXME: This causes SEGV's due to dport/sport runnin off the end of ports.
+     */
+    if (/* dport > hiport || */ !ports[dport].port) {
+      if (/* sport <= hiport && */ ports[sport].twoway) {
 	ADDR_T daddr = DADDR (iph), saddr = SADDR (iph);
 	PList *node = find_node (sport, saddr, dport, daddr); /* Backwards. */
 
@@ -70,7 +73,7 @@ rt_filter (UCHAR *buf, int len)
 		    &buf[IPHLEN (iph) + DOFF (tcph)], iph, tcph, data_to, len);
 	} else if (all_conns && !FINRST (tcph)) {
 	  /*
-	   * Bug: if this is the ACK between the two FIN's for this
+	   * FIXME: if this is the ACK between the two FIN's for this
 	   * connection, we'll get an erroneous (two-packet) connection
 	   * track.  Need to save state here somehow...blah.
 	   */
