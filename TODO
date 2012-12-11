@@ -10,7 +10,7 @@
 
 * Add an rc file capability for default (no argument) usage: ~/.issniffrc
 
-* Add ncurses front-end option.
+* Add console front-end option.
 
 * Add output tty selection.
 
