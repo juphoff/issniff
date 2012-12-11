@@ -1,5 +1,4 @@
 .\" -*- nroff -*-
-.\" $Id$
 .TH issniff 8 "11 January 2010" "Version @@IS_VERSION@@" "NRAO, Transmeta, rPath, Novell"
 .SH NAME
 issniff \- Internet Session SNIFFer

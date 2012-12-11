@@ -1,5 +1,3 @@
-/* $Id$ */
-
 /*
  * Miscellanous general definitions.
  */

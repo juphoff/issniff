@@ -1,5 +1,3 @@
-/* $Id$ */
-
 int linkhdr_len;
 struct ifreq ifr;
 

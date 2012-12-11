@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #include "globals.h"
 #include "filter.h"
 

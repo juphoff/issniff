@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #include <ctype.h>
 #include <dirent.h>
 #include <fcntl.h>

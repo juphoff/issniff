@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #include <errno.h>
 #include <getopt.h>
 #include <netinet/ip.h>

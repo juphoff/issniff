@@ -1,5 +1,3 @@
-/* $Id$ */
-
 /* Define u_int32_t if necessary. */
 #undef u_int32_t
 
