@@ -1,5 +1,3 @@
-/* $Id$ */
-
 using namespace std;
 
 /*

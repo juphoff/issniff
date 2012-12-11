@@ -1,5 +1,3 @@
-/* $Id$ */
-
 /*
  * Interface type prefixes and their link-level packet header sizes.
  */

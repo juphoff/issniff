@@ -1,5 +1,3 @@
-/* $Id$ */
-
 /*
  * Only supported under Linux at this point!
  */

@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #include "globals.h"
 #include "filter.h"
 
@@ -31,8 +29,8 @@ expand_cache (void)
   }
 }
 
-void add_node (PORT_T DPORT, ADDR_T DADDR, PORT_T SPORT, ADDR_T SADDR, 
-	       int HAS_SYN, UCHAR *BUF, IPhdr *IPH, TCPhdr *TCPH, 
+void add_node (PORT_T DPORT, ADDR_T DADDR, PORT_T SPORT, ADDR_T SADDR,
+	       int HAS_SYN, UCHAR *BUF, IPhdr *IPH, TCPhdr *TCPH,
 	       int SHIFT, int LENGTH) {
   PList *newp = NULL;
   if (!cache_size) {

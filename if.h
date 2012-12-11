@@ -1,5 +1,3 @@
-/* $Id$ */
-
 extern int linkhdr_len;
 
 extern char *if_detect (int);
