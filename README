@@ -2,7 +2,7 @@
 real README.  Check the man-page for usage information.)
 
 Things are *messy* right now: I'm in the middle of a code refactoring
-and adding BPF support for Linux.
+and some fitful attempts at adding BPF support for Linux.
 
 
 Basic:
@@ -25,7 +25,7 @@ Later:
 
 Addresses can be specified as either source or destination addresses
 (for the packets in question), and will be matched with the packet
-addresses somehow, e.g. via netmasks.
+addresses somehow.
 
 
 Eventual:
@@ -33,13 +33,13 @@ Eventual:
 Tty's/filters will be written to by fork()'d processes that will have
 the data passed to them by the "master" sniffer via IPC of some sort.
 
-A real-time (packet-by-packet), switchable, etc., ncurses-based
-front-end for flexibility.
+A real-time (packet-by-packet), switchable, etc., console front-end for
+flexibility.
 
 Add a bpf-like module to Linux to keep at least the high-level filtering
-in the kernel and away from userland.  Already discussed this with Alan
-Cox, who likes the idea.  {Hey--is this here now with 2.1.x?}
+in the kernel and away from userland.  Discussed this with Alan Cox, who
+liked the idea.  {Hey--is this here now with 2.1.x?}
 
 Real-time remote transfer of the sniffed data via some sort of encrypted
-network channel.  This will be my project if I'm ever hit by a car and
+network channel.  This will be my project if I'm ever hit by a train and
 laid up in bed for months.  Otherwise, don't count on it ever happening.
