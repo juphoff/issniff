@@ -52,10 +52,10 @@ do-all:	.depend
 endif
 
 .depend:
-	@CPP@ -M $(DEBUGS) $(DEFINES) $(SRCS) > $@
+	@CPP@ -M $(DEBUGS) $(DEFINES) $(CSRCS) $(CXXSRCS) > $@
 
 $(PROG):	$(OBJS)
-	$(CC) @LDFLAGS@ -static -o $@ $^ @LIBS@
+	$(CC) @LDFLAGS@ -o $@ $^ @LIBS@
 
 $(MANUAL):	$(MANSRC) .version
 	$(RM) $@
