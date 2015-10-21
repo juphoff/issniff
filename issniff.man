@@ -57,10 +57,7 @@ No local packets/connections.  Only packets/connections originating from
 \fBother\fR systems will be passed through to the packet-filtering
 layer, i.e. locally originated packets/connections will be "lost."
 (Default is to pass/process all packets/connections on OS's that support
-it, currently Linux and OSF/1.)
-.sp
-Note that under OSF/1 this option will also disable the monitoring of
-\fBincoming\fR packets to the local host.
+it, currently Linux.)
 .TP
 .BI -o \ filename
 Send output to \fIfilename\fR.  Verbose commentary messages--normally
@@ -174,20 +171,15 @@ OS's.  \fBissniff\fR exits cleanly on: \fISIGINT\fR, \fISIGQUIT\fR, and
 \fISIGTERM\fR.  (In fact, these are the only exit methods supported.)
 .SH BUGS
 Tcpdump "interface" still buggy and under development.
-.sp
-OSF/1 (Digital UNIX) seems to garble output now and then.
 .SH NOTES
 Some features and/or options have not yet been implemented.
 \fBissniff\fR has been tested under:
 .sp
 Linux: 1.2.13, 1.3.45, 1.99.x., 2.0.x., 2.1.x, 2.2.x, 2.6.x, 3.10.0
-.br
-OSF/1: T3.2, 4.0B.
 .sp
 Linux is the only OS under active development; all others have been
-deprecated. All SunOS and Solaris code was removed during a recent code
-refactoring. Some OSF/1 code remains, but it should be considered
-unusable; it will be removed eventually, too.
+deprecated. All SunOS, Solaris, and OSF/1 code was removed during various
+code refactorings.
 .SH AUTHOR
 This code and documentation is Copyright (C) 1996-1999, 2004-2005, 2008-2010, 2012-2013, 2015
 Jeffrey A. Uphoff <juphoff@kjsl.com>.
