@@ -14,8 +14,9 @@ DEFINES_linux-gnu	= -DSUPPORT_TCPDUMP
 DEFINES	= $(DEFINES_@this_os@) -DIS_VERSION="$(IS_VERSION)"
 
 # The Ted Ts'o express.  Noisy under some OS's.  Very gcc-specific.
-WFLAGS	= -Wall -Wcast-align -Wcast-qual -Winline \
-          -Wpointer-arith -Wshadow -Wwrite-strings
+WFLAGS	= -Wall -Wcast-align -Wcast-qual -Winline -Wnested-externs \
+          -Wpointer-arith -Wshadow -Wstrict-prototypes -Wwrite-strings \
+          -Wno-strict-aliasing
 
 # OS-specific C compiler flags.
 CFLAGS_linux-gnu	= -fomit-frame-pointer -fno-strength-reduce
@@ -54,7 +55,7 @@ endif
 	@CPP@ -M $(DEBUGS) $(DEFINES) $(SRCS) > $@
 
 $(PROG):	$(OBJS)
-	$(CC) @LDFLAGS@ -o $@ $^ @LIBS@
+	$(CC) @LDFLAGS@ -static -o $@ $^ @LIBS@
 
 $(MANUAL):	$(MANSRC) .version
 	$(RM) $@

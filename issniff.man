@@ -42,7 +42,7 @@ will also cause \fBissniff\fR to use more memory.
 .BI -d \ max_data
 The maximum amount of data, in bytes, to collect for a connection before
 dumping its data/statistics and discontinuing data-collection.  (Default
-is \fI4096\fR, an arbitrary value.)  Note that each collected byte takes
+is \fI16k\fR, an arbitrary value.)  Note that each collected byte takes
 up two bytes of internal storage.
 .TP
 .BI -i \ interface

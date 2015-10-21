@@ -2,8 +2,6 @@ extern int linkhdr_len;
 
 extern char *if_detect (int);
 
-#define SUCCESSFUL 0
-#define UNSUCCESSFUL -1
 #define USE_TEMP_SOCK -1
 
 #ifdef __linux__

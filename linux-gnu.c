@@ -63,7 +63,7 @@ if_open_net (int nolocal)
       fprintf (stderr, "Cannot auto-detect a default interface.  Odd, that.\n");
       exit (1);
     }
-    assert (if_setname (interface) == SUCCESSFUL);
+    assert (if_setname (interface) == 0);
   }
   if (ioctl (iface, SIOCGIFFLAGS, &ifr) < 0) {
     perror ("ioctl (SIOCGIFFLAGS)");
