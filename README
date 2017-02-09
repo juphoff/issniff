@@ -1,45 +1,11 @@
-(This file is more of a stream-of-consciousness TODO expansion than a
-real README.  Check the man-page for usage information.)
+This was a session-based packet sniffer I put together in the mid-90s in
+response to a series of intrusions on my network. It's from a completely
+different age, one of broadcast thinnet networking (entire subnets'
+traffic visible to all systems), clear-text inter-site logins via
+telnet, sendmail used without TLS, pre-SSL HTTP, etc.
 
-Things are *messy* right now: I'm in the middle of a code refactoring
-and some fitful attempts at adding BPF support for Linux.
+I also originally used this project as fun exercise in abusing the
+preprocessor, though most of that abuse has since been excised. :)
 
-
-Basic:
-
-Allow catching connections late--meaning that the SYN packet(s) were not
-seen.  This would allow pickup of already-established connections at
-runtime.  (Partially implemented.)
-
-Allow run-time selection of what addresses to monitor, and (eventual)
-optional specification of a tty for each address' data to be printed on.
-The former is currently accomplished by piping from 'tcpdump'.
-
-Allow run-time selection of what destination (only) ports to monitor,
-and optional specification of a tty for each port's data to be printed
-to.  The tty-per-port (and tty-per-address?) option(s) will probably be
-mutually exclusive, at least initially.
-
-
-Later:
-
-Addresses can be specified as either source or destination addresses
-(for the packets in question), and will be matched with the packet
-addresses somehow.
-
-
-Eventual:
-
-Tty's/filters will be written to by fork()'d processes that will have
-the data passed to them by the "master" sniffer via IPC of some sort.
-
-A real-time (packet-by-packet), switchable, etc., console front-end for
-flexibility.
-
-Add a bpf-like module to Linux to keep at least the high-level filtering
-in the kernel and away from userland.  Discussed this with Alan Cox, who
-liked the idea.  {Hey--is this here now with 2.1.x?}
-
-Real-time remote transfer of the sniffed data via some sort of encrypted
-network channel.  This will be my project if I'm ever hit by a train and
-laid up in bed for months.  Otherwise, don't count on it ever happening.
+I consider it a fun little curiosity to tinker with now and then. A
+pitiful, embryonic effort at rewriting it into C++ exists on a branch.
