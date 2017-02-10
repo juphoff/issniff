@@ -9,3 +9,6 @@ preprocessor, though most of that abuse has since been excised. :)
 
 I consider it a fun little curiosity to tinker with now and then. A
 pitiful, embryonic effort at rewriting it into C++ exists on a branch.
+
+Dang, I guess I need to add a formal license to this now that I've
+uploaded it to Github!
