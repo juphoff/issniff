@@ -1,8 +1,9 @@
-This was a session-based packet sniffer I put together in the mid-90s in
-response to a series of intrusions on my network. It's from a completely
-different age, one of repeater-driven thinnet networking (entire
-subnets' traffic visible to all systems), clear-text inter-site logins
-via telnet, sendmail used without TLS, pre-SSL HTTP, etc.
+This was a session-based packet sniffer I put together in the mid-'90s
+in response to a series of intrusions on my network. It's from a
+completely different age, one of repeater-driven thinnet networking
+(entire subnets' traffic visible to all systems), fully-routable IP
+addresses to the desktop without firewalling, clear-text inter-site
+logins via telnet, sendmail used without TLS, pre-SSL HTTP, etc.
 
 I also originally used this project as fun exercise in abusing the
 preprocessor, though most of that abuse has since been excised. :)
@@ -10,5 +11,5 @@ preprocessor, though most of that abuse has since been excised. :)
 I consider it a fun little curiosity to tinker with now and then. A
 pitiful, embryonic effort at rewriting it into C++ exists on a branch.
 
-Dang, I guess I need to add a formal license to this now that I've
-uploaded it to Github!
+(And, dang, I guess I need to add a formal license to this now that I've
+uploaded it to Github!)
