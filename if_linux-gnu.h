@@ -7,6 +7,7 @@ static struct {
 } if_types[] = {
   { "eth", sizeof (struct ethhdr) },
   { "em", sizeof (struct ethhdr) },
+  { "eno", sizeof (struct ethhdr) },
   { "br", sizeof (struct ethhdr) },
   { "wlan", sizeof (struct ethhdr) },
   { "tun", 0 },
