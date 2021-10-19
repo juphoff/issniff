@@ -54,7 +54,7 @@ endif
 	@CPP@ -M $(DEBUGS) $(DEFINES) $(SRCS) > $@
 
 $(PROG):	$(OBJS)
-	$(CC) @LDFLAGS@ -static -o $@ $^ @LIBS@
+	$(CC) @LDFLAGS@ -o $@ $^ @LIBS@
 
 $(MANUAL):	$(MANSRC) .version
 	$(RM) $@
