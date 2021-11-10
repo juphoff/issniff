@@ -241,7 +241,7 @@ main (int argc, char **argv)
 	filter = sf_filter;
 	if_read = if_read_ip_raw;
 #endif
-	strncpy (of_name, optarg, MAXNAMLEN);
+	strncpy (of_name, optarg, MAXNAMLEN - 1);
 
 	if (!(of_p = fopen (of_name, "a"))) {
 	  perror ("Cannot open output file");
@@ -268,7 +268,7 @@ main (int argc, char **argv)
 	if_open = if_open_pcap;
 	if_close = if_close_pcap;
 	if_read = if_read_ip_pcap;
-	strncpy (if_name, optarg, MAXNAMLEN);
+	strncpy (if_name, optarg, MAXNAMLEN - 1);
 	break;
 #else
       case 'w':

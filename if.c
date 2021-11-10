@@ -79,7 +79,7 @@ if_setname (const char *interface)
   while (if_types[++i].type) {
     if (!strncmp (if_types[i].type, interface, strlen (if_types[i].type))) {
       linkhdr_len = if_types[i].hdr_len;
-      strncpy (ifr.ifr_name, interface, IFNAMSIZ);
+      strncpy (ifr.ifr_name, interface, IFNAMSIZ - 1);
       return 0;
     }
   }
